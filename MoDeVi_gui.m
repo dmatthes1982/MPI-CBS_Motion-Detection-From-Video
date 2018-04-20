@@ -18,24 +18,68 @@
 % -------------------------------------------------------------------------
 
 fig = uifigure;                                                             % figure
-fig.Position = [100 300 1060 420];
+fig.Position = [100 300 1060 440];
 fig.Name = 'Motion Detection from Videos';
 fig.CloseRequestFcn = @(fig, event)CloseRequestFunction(fig);               % connect callback func CloseRequestFunction with figure
 
 vid = uiaxes(fig);                                                          % element for displaying the video during the processing
 vid.XTick = [];
 vid.YTick = [];
-vid.Position = [20 110 500 290];
+vid.Position = [20 130 500 290];
 vid.Visible = 'off';
 
 sig = uiaxes(fig);                                                          % graph, wich shows the motion signal cource during 
-sig.Position = [540 110 500 290];                                           % the video processing 
+sig.Position = [540 130 500 290];                                           % the video processing 
 sig.XLim = [0 75];
 %sig.YLim = [0 2*10^-4];
 
 label = uilabel(fig);                                                       % text label, which displays the current frame number and
-label.Position = [20 70 980 20];                                            % and the current motion value during video processing
-label.Text = '';
+label.Position = [20 100 980 20];                                           % and the current motion value during video processing
+label.Text = 'Status:';
+
+roi = uilabel(fig);
+roi.Position = [20 60 980 20];
+roi.Text = 'Region of interest:';
+
+x0Label = uilabel(fig);
+x0Label.Position = [140 60 40 20];
+x0Label.Text = 'x0:';
+
+roiData.x0 = uieditfield(fig, 'numeric');
+roiData.x0.Position = [180 60 60 30];
+roiData.x0.Value = 1;
+roiData.x0.Limits = [1 1000];
+roiData.x0.Enable = 'off';
+
+y0Label = uilabel(fig);
+y0Label.Position = [260 60 40 20];
+y0Label.Text = 'y0:';
+
+roiData.y0 = uieditfield(fig, 'numeric');
+roiData.y0.Position = [300 60 60 30];
+roiData.y0.Value = 1;
+roiData.y0.Limits = [1 1000];
+roiData.y0.Enable = 'off';
+
+widthLabel = uilabel(fig);
+widthLabel.Position = [380 60 40 20];
+widthLabel.Text = 'width:';
+
+roiData.width = uieditfield(fig, 'numeric');
+roiData.width.Position = [420 60 60 30];
+roiData.width.Value = 1000;
+roiData.width.Limits = [1 1000];
+roiData.width.Enable = 'off';
+
+heightLabel = uilabel(fig);
+heightLabel.Position = [500 60 40 20];
+heightLabel.Text = 'height:';
+
+roiData.height = uieditfield(fig, 'numeric');
+roiData.height.Position = [540 60 60 30];
+roiData.height.Value = 1000;
+roiData.height.Limits = [1 1000];
+roiData.height.Enable = 'off';
 
 start   = uibutton(fig);                                                    % start processing button
 start.Position = [20 20 100 30];
@@ -56,25 +100,31 @@ load    = uibutton(fig);                                                    % lo
 load.Position = [940 20 100 30];
 load.Text = 'load';
 load.Enable = 'on';
+load.UserData = struct('Width', 1000, 'Height', 1000, 'Image', []);
 
 address = uieditfield(fig);                                                 % field, wich contains location and name of selected 
 address.Position = [380 20 540 30];                                         % video file (editable)
 
 motionSignal = 0;
 time = 0;
-folder = [];
-filename = [];
 
-% Link event functions
+% Link callback functions
 start.ButtonPushedFcn = @(start, evt)StartButtonPushed(fig, start, stop,... % connect callback func StartButtonPushed with corresponding button
-                                    save, address, load);
+                                    save, address, load, roiData);
 stop.ButtonPushedFcn = @(stop, evt)StopButtonPushed(start, stop, save, ...  % connect callback func StopButtonPushed with corresponding button
-                                    address, load);
+                                    address, load, roiData);
 save.ButtonPushedFcn = @(save, evt)SaveButtonPushed(time, motionSignal, ... % connect callback func SaveButtonPushed with corresponding button
                                     address);                                  
-load.ButtonPushedFcn = @(load, evt)LoadButtonPushed(vid, start, address);   % connect callback func SaveButtonPushed with corresponding button
-address.ValueChangedFcn = @(address, load)AddressFieldChanged(start, ...    % connect callback func AddressFieldChanged with corresponding field
-                                    address);
+load.ButtonPushedFcn = @(load, evt)LoadButtonPushed(vid, start, roiData,... % connect callback func SaveButtonPushed with corresponding button
+                                    address, load);   
+address.ValueChangedFcn = @(address, evt)AddressFieldChanged(vid, ...       % connect callback func AddressFieldChanged with corresponding field
+                                    start, roiData, address, load);
+roiData.x0.ValueChangedFcn = @(x0, evt)X0FieldChanged(vid, roiData, load);
+roiData.y0.ValueChangedFcn = @(y0, evt)Y0FieldChanged(vid, roiData, load);
+roiData.width.ValueChangedFcn = @(width, evt)WidthFieldChanged(vid, ...
+                                    roiData, load);
+roiData.height.ValueChangedFcn = @(height, evt)HeightFieldChanged(vid, ...
+                                    roiData, load);
 
 % -------------------------------------------------------------------------
 % Main video processing loop
@@ -112,8 +162,10 @@ while(1)
     OldImage    = im2double(OldImg);
     NewImage    = rgb2gray(NewImage);                                       % convert images into a grayscale images
     OldImage    = rgb2gray(OldImage);
-    NewHist     = imhist(NewImage)./numel(NewImage);                        % estimate weighted histogram of the images
-    OldHist     = imhist(OldImage)./numel(OldImage);
+    NewImageSub = GetExcerpt(NewImage, roiData);
+    OldImageSub = GetExcerpt(OldImage, roiData);    
+    NewHist     = imhist(NewImageSub)./numel(NewImageSub);                  % estimate weighted histogram of the images
+    OldHist     = imhist(OldImageSub)./numel(OldImageSub);
 
     sig0 = sum((OldHist - NewHist).^2);                                     % estimate current value
     motionSignal(sigPointer) = median([sig0 sig1 sig2]);                    % apply median filter to reject outliers and add the result to the motion signal vector
@@ -122,12 +174,12 @@ while(1)
     time(timePointer) = VidObj.CurrentTime;                                 % add current timestamp to time vector
 
     warning off;
-    imshow(NewImage - OldImage, 'Parent', vid);                             % display diffence of current grayscale image and its predecessor
+    imshow(AddRoi2Image(NewImage - OldImage, roiData), 'Parent', vid);      % display diffence of current grayscale image and its predecessor
     plot(sig, motionSignal((numOfFrames - 1):1:(numOfFrames + 75 - 1)));    % update motion signal time course
     drawnow;                                                                % IMPORTANT: update figures and process callbacks
     warning on;
-    msg = sprintf('Frame: %d - Current Motion Value: %d', numOfFrames, ...  % update text label
-                      motionSignal(numOfFrames + 75 - 1));
+    msg = sprintf('Status: Frame: %d - Current Motion Value: %d', ...       % update text label
+                      numOfFrames, motionSignal(numOfFrames + 75 - 1));
     label.Text = msg;
     
     OldImg = NewImg;                                                        % copy current Image to variable containing the predecessor
@@ -144,58 +196,107 @@ end
 % -------------------------------------------------------------------------
 % Callback functions
 % -------------------------------------------------------------------------
-function LoadButtonPushed(vid, start, address)                              % LoadButtonPushed callback
+function LoadButtonPushed(vid, start, roiData, address, load)               % LoadButtonPushed callback
 
 [file,path] = uigetfile('*.wmv', 'Select video file...');
 start.Enable = 'on';
 address.Value = [path file];
 
+roiData.x0.Enable = 'on';
+roiData.y0.Enable = 'on';
+roiData.width.Enable = 'on';
+roiData.height.Enable = 'on';
+
 VidObj = VideoReader(address.Value);                                        % load and show first frame
 NewImg = readFrame(VidObj);
-imshow(NewImg, 'Parent', vid);
-drawnow;
+
+roiData.x0.Limits = [1 VidObj.Width];
+roiData.y0.Limits = [1 VidObj.Height];
+roiData.width.Limits = [1 VidObj.Width];
+roiData.height.Limits = [1 VidObj.Height];
+
+roiData.x0.Value = 1;
+roiData.y0.Value = 1;
+roiData.width.Value = VidObj.Width;
+roiData.height.Value = VidObj.Height;
+
+load.UserData.Width = VidObj.Width;
+load.UserData.Height = VidObj.Height;
+load.UserData.Image = NewImg;  
+
+UpdateVidObject(vid, roiData, NewImg);
 
 end
 
-function AddressFieldChanged(start, address)                                % AddressFieldChanged callback
+function AddressFieldChanged(vid, start, roiData, address, load)            % AddressFieldChanged callback
 
-if isempty(address.Value)                                                   % validity check
+try                                                                         % validity check
+  VidObj = VideoReader(address.Value);
+catch
+  roiData.x0.Enable = 'off';
+  roiData.y0.Enable = 'off';
+  roiData.width.Enable = 'off';
+  roiData.height.Enable = 'off';
   start.Enable = 'off';
-else
-  addressLength = length(address.Value);
-  if addressLength < 5
-    start.Enable = 'off';
-  else
-    fileSuffix = extractAfter(address.Value, addressLength - 4);
-    if strcmp (fileSuffix, '.wmv')
-      start.Enable = 'on';
-    else
-      start.Enable = 'off';
-    end
-  end
+  
+  imshow([], 'Parent', vid);
+  
+  return;
 end
+
+roiData.x0.Enable = 'on';
+roiData.y0.Enable = 'on';
+roiData.width.Enable = 'on';
+roiData.height.Enable = 'on';
+start.Enable = 'on';
+
+NewImg = readFrame(VidObj);
+
+roiData.x0.Limits = [1 VidObj.Width];
+roiData.y0.Limits = [1 VidObj.Height];
+roiData.width.Limits = [1 VidObj.Width];
+roiData.height.Limits = [1 VidObj.Height];
+
+roiData.x0.Value = 1;
+roiData.y0.Value = 1;
+roiData.width.Value = VidObj.Width;
+roiData.height.Value = VidObj.Height;
+
+load.UserData.Width = VidObj.Width;
+load.UserData.Height = VidObj.Height;
+load.UserData.Image = NewImg;  
+
+UpdateVidObject(vid, roiData, NewImg);
 
 end
 
-function StartButtonPushed(fig, start, stop, save, address, load)           % StartButtonPushed callback
+function StartButtonPushed(fig, start, stop, save, address, load, roiData)  % StartButtonPushed callback
 
 start.Enable = 'off';
 stop.Enable = 'on';
 save.Enable = 'off';
 load.Enable = 'off';
 address.Enable = 'off';
+roiData.x0.Enable = 'off';
+roiData.y0.Enable = 'off';
+roiData.width.Enable = 'off';
+roiData.height.Enable = 'off';
 uiresume(fig);                                                              % activate video processing in the main loop 
 
 end
 
-function StopButtonPushed(start, stop, save, address, load)                 % StopButtonPushed callback
+function StopButtonPushed(start, stop, save, address, load, roiData)        % StopButtonPushed callback
 
 start.Enable = 'on';
 save.Enable = 'on';
 load.Enable = 'on';
 stop.Enable = 'off';
 address.Enable = 'on';
-
+roiData.x0.Enable = 'on';
+roiData.y0.Enable = 'on';
+roiData.width.Enable = 'on';
+roiData.height.Enable = 'on';
+  
 end
 
 function SaveButtonPushed(time, motionSignal, address)                      %#ok<INUSL> SaveButtonPushed callback
@@ -204,4 +305,97 @@ end
 
 function CloseRequestFunction(fig)                                          % CloseRequestFunction callback
 delete(fig);                                                                % destroy gui
+end
+
+function X0FieldChanged(vid, roiData, load)
+
+widthMax = load.UserData.Width-roiData.x0.Value+1;
+if roiData.width.Value > widthMax
+  roiData.width.Value = widthMax;
+end
+
+UpdateVidObject(vid, roiData, load.UserData.Image);
+
+end
+
+function Y0FieldChanged(vid, roiData, load)
+
+heightMax = load.UserData.Height-roiData.y0.Value+1;
+if roiData.height.Value > heightMax
+  roiData.height.Value = heightMax;
+end
+
+UpdateVidObject(vid, roiData, load.UserData.Image);
+
+end
+
+function WidthFieldChanged(vid,roiData,load)
+
+x0Max = load.UserData.Width-roiData.width.Value+1;
+if roiData.x0.Value > x0Max
+  roiData.x0.Value = x0Max;
+end
+
+UpdateVidObject(vid, roiData, load.UserData.Image);
+
+end
+
+function HeightFieldChanged(vid, roiData, load)
+
+y0Max = load.UserData.Height-roiData.height.Value+1;
+if roiData.y0.Value > y0Max
+  roiData.y0.Value = y0Max;
+end
+
+UpdateVidObject(vid, roiData, load.UserData.Image);
+
+end
+
+% -------------------------------------------------------------------------
+% Other subfunctions
+% -------------------------------------------------------------------------
+function [image] = AddRoi2Image(image, roiData)
+
+x0    = roiData.x0.Value;
+xEnd  = roiData.x0.Value + roiData.width.Value - 1;
+y0    = roiData.y0.Value;
+yEnd  = roiData.y0.Value + roiData.height.Value - 1;
+
+if size(image, 3) == 1
+  image(y0:yEnd, x0:x0+5) = 1;
+  image(y0:yEnd, xEnd-5:xEnd) = 1;
+  image(y0:y0+5, x0:xEnd) = 1;
+  image(yEnd-5:yEnd, x0:xEnd) = 1;
+elseif size(image, 3) == 3
+  image(y0:yEnd, x0:x0+5, 1) = 0;
+  image(y0:yEnd, x0:x0+5, 2) = 255;
+  image(y0:yEnd, x0:x0+5, 3) = 0;
+  image(y0:yEnd, xEnd-5:xEnd, 1) = 0;
+  image(y0:yEnd, xEnd-5:xEnd, 2) = 255;
+  image(y0:yEnd, xEnd-5:xEnd, 3) = 0;
+  image(y0:y0+5, x0:xEnd, 1) = 0;
+  image(y0:y0+5, x0:xEnd, 2) = 255;
+  image(y0:y0+5, x0:xEnd, 3) = 0;
+  image(yEnd-5:yEnd, x0:xEnd, 1) = 0;
+  image(yEnd-5:yEnd, x0:xEnd, 2) = 255;
+  image(yEnd-5:yEnd, x0:xEnd, 3) = 0;
+end
+
+end
+
+function UpdateVidObject(vid, roiData, image)
+image = AddRoi2Image(image, roiData);
+imshow(image, 'Parent', vid);
+drawnow;
+end
+
+function [image] = GetExcerpt(image, roiData)
+
+x0    = roiData.x0.Value;
+xEnd  = roiData.x0.Value + roiData.width.Value - 1;
+y0    = roiData.y0.Value;
+yEnd  = roiData.y0.Value + roiData.height.Value - 1;
+
+image = image(y0:yEnd, x0:xEnd, :);
+
 end
