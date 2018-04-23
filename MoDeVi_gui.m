@@ -11,7 +11,7 @@
 %
 % SEE also VIDEOREADER, READFRAME
 
-% Copyright (C) 2017, Daniel Matthes, MPI CBS
+% Copyright (C) 2018, Daniel Matthes, MPI CBS
 
 % -------------------------------------------------------------------------
 % Making the graphical user interface
@@ -37,46 +37,46 @@ label = uilabel(fig);                                                       % te
 label.Position = [20 100 980 20];                                           % and the current motion value during video processing
 label.Text = 'Status:';
 
-roi = uilabel(fig);
-roi.Position = [20 60 980 20];
+roi = uilabel(fig);                                                         % text label for region of interest
+roi.Position = [20 60 980 20];                                                
 roi.Text = 'Region of interest:';
 
-x0Label = uilabel(fig);
+x0Label = uilabel(fig);                                                     % text label for x zero point of region of interest
 x0Label.Position = [140 60 40 20];
 x0Label.Text = 'x0:';
 
-roiData.x0 = uieditfield(fig, 'numeric');
-roiData.x0.Position = [180 60 60 30];
+roiData.x0 = uieditfield(fig, 'numeric');                                   % numeric field, which contains the x zero point of 
+roiData.x0.Position = [180 60 60 30];                                       % the region of interest 
 roiData.x0.Value = 1;
 roiData.x0.Limits = [1 1000];
 roiData.x0.Enable = 'off';
 
-y0Label = uilabel(fig);
+y0Label = uilabel(fig);                                                     % text label for y zero point of region of interest
 y0Label.Position = [260 60 40 20];
 y0Label.Text = 'y0:';
 
-roiData.y0 = uieditfield(fig, 'numeric');
-roiData.y0.Position = [300 60 60 30];
+roiData.y0 = uieditfield(fig, 'numeric');                                   % numeric field, which contains the y zero point of 
+roiData.y0.Position = [300 60 60 30];                                       % the region of interest
 roiData.y0.Value = 1;
 roiData.y0.Limits = [1 1000];
 roiData.y0.Enable = 'off';
 
-widthLabel = uilabel(fig);
+widthLabel = uilabel(fig);                                                  % text label for the region of interest width
 widthLabel.Position = [380 60 40 20];
 widthLabel.Text = 'width:';
 
-roiData.width = uieditfield(fig, 'numeric');
-roiData.width.Position = [420 60 60 30];
+roiData.width = uieditfield(fig, 'numeric');                                % numeric field, which contains the region of interest 
+roiData.width.Position = [420 60 60 30];                                    % width
 roiData.width.Value = 1000;
 roiData.width.Limits = [1 1000];
 roiData.width.Enable = 'off';
 
-heightLabel = uilabel(fig);
+heightLabel = uilabel(fig);                                                 % text label for the region of interest height
 heightLabel.Position = [500 60 40 20];
 heightLabel.Text = 'height:';
 
-roiData.height = uieditfield(fig, 'numeric');
-roiData.height.Position = [540 60 60 30];
+roiData.height = uieditfield(fig, 'numeric');                               % numeric field, which contains the region of interest 
+roiData.height.Position = [540 60 60 30];                                   % height
 roiData.height.Value = 1000;
 roiData.height.Limits = [1 1000];
 roiData.height.Enable = 'off';
@@ -107,6 +107,7 @@ address.Position = [380 20 540 30];                                         % vi
 
 motionSignal = 0;
 time = 0;
+roi = 0;
 
 % Link callback functions
 start.ButtonPushedFcn = @(start, evt)StartButtonPushed(fig, start, stop,... % connect callback func StartButtonPushed with corresponding button
@@ -114,18 +115,18 @@ start.ButtonPushedFcn = @(start, evt)StartButtonPushed(fig, start, stop,... % co
 stop.ButtonPushedFcn = @(stop, evt)StopButtonPushed(start, stop, save, ...  % connect callback func StopButtonPushed with corresponding button
                                     address, load, roiData);
 save.ButtonPushedFcn = @(save, evt)SaveButtonPushed(time, motionSignal, ... % connect callback func SaveButtonPushed with corresponding button
-                                    address);                                  
-load.ButtonPushedFcn = @(load, evt)LoadButtonPushed(vid, start, roiData,... % connect callback func SaveButtonPushed with corresponding button
+                                    roi, address); 
+load.ButtonPushedFcn = @(load, evt)LoadButtonPushed(vid, start, roiData,... % connect callback func LoadButtonPushed with corresponding button
                                     address, load);   
 address.ValueChangedFcn = @(address, evt)AddressFieldChanged(vid, ...       % connect callback func AddressFieldChanged with corresponding field
                                     start, roiData, address, load);
-roiData.x0.ValueChangedFcn = @(x0, evt)X0FieldChanged(vid, roiData, load);
-roiData.y0.ValueChangedFcn = @(y0, evt)Y0FieldChanged(vid, roiData, load);
-roiData.width.ValueChangedFcn = @(width, evt)WidthFieldChanged(vid, ...
+roiData.x0.ValueChangedFcn = @(x0, evt)X0FieldChanged(vid, roiData, load);  % connect callback func X0FieldChanged with corresponding field
+roiData.y0.ValueChangedFcn = @(y0, evt)Y0FieldChanged(vid, roiData, load);  % connect callback func Y0FieldChanged with corresponding field
+roiData.width.ValueChangedFcn = @(width, evt)WidthFieldChanged(vid, ...     % connect callback func WidthFieldChanged with corresponding field
                                     roiData, load);
-roiData.height.ValueChangedFcn = @(height, evt)HeightFieldChanged(vid, ...
+roiData.height.ValueChangedFcn = @(height, evt)HeightFieldChanged(vid, ...  % connect callback func HeightFieldChanged with corresponding field
                                     roiData, load);
-
+                                  
 % -------------------------------------------------------------------------
 % Main video processing loop
 % -------------------------------------------------------------------------                                  
@@ -162,10 +163,10 @@ while(1)
     OldImage    = im2double(OldImg);
     NewImage    = rgb2gray(NewImage);                                       % convert images into a grayscale images
     OldImage    = rgb2gray(OldImage);
-    NewImageSub = GetExcerpt(NewImage, roiData);
-    OldImageSub = GetExcerpt(OldImage, roiData);    
-    NewHist     = imhist(NewImageSub)./numel(NewImageSub);                  % estimate weighted histogram of the images
-    OldHist     = imhist(OldImageSub)./numel(OldImageSub);
+    NewROI      = GetExcerpt(NewImage, roiData);                            % extract the part of the image, wich is defined as region of interest
+    OldROI      = GetExcerpt(OldImage, roiData);    
+    NewHist     = imhist(NewROI)./numel(NewROI);                            % estimate weighted histogram of the region of interests
+    OldHist     = imhist(OldROI)./numel(OldROI);
 
     sig0 = sum((OldHist - NewHist).^2);                                     % estimate current value
     motionSignal(sigPointer) = median([sig0 sig1 sig2]);                    % apply median filter to reject outliers and add the result to the motion signal vector
@@ -187,9 +188,11 @@ while(1)
   
   % After either the whole video processing was done or stop button pushed
   time = time(1:timePointer);                                               % shrink time vector to its actual length                               
-  motionSignal = motionSignal(dispBufLength+1:sigPointer);                  % shrink motion signal vector to its actual length 
+  motionSignal = motionSignal(dispBufLength+1:sigPointer);                  % shrink motion signal vector to its actual length
+  roi = [roiData.x0.Value roiData.y0.Value roiData.width.Value ...          % get current roi selection
+          roiData.height.Value];
   save.ButtonPushedFcn = @(save, evt)SaveButtonPushed(time, ...             % update callback for the save SaveButtonPushed event
-                                    motionSignal, address);
+                                    motionSignal, roi, address);
 end
 
 
@@ -198,86 +201,113 @@ end
 % -------------------------------------------------------------------------
 function LoadButtonPushed(vid, start, roiData, address, load)               % LoadButtonPushed callback
 
-[file,path] = uigetfile('*.wmv', 'Select video file...');
-start.Enable = 'on';
-address.Value = [path file];
+[file,path] = uigetfile('*.wmv', 'Select video file...');                   % get filename
 
-roiData.x0.Enable = 'on';
+if ~any(file)                                                               % if cancel was pressed
+  roiData.x0.Enable = 'off';                                                % disable roi selection
+  roiData.y0.Enable = 'off';
+  roiData.width.Enable = 'off';
+  roiData.height.Enable = 'off';
+  start.Enable = 'off';                                                     % disable start button
+  address.Value = '';                                                       % clear address field
+  
+  imshow([], 'Parent', vid);                                                % clear previous preview
+  
+  return;                                             
+end
+
+try                                                                         % validity check
+  VidObj = VideoReader([path file]);                                        % try to get video handle
+catch                                                                       % if not possible
+  roiData.x0.Enable = 'off';                                                % disable roi selection
+  roiData.y0.Enable = 'off';
+  roiData.width.Enable = 'off';
+  roiData.height.Enable = 'off';
+  start.Enable = 'off';                                                     % disable start button
+  address.Value = '';                                                       % clear address field
+  
+  imshow([], 'Parent', vid);                                                % clear previous preview
+  
+  return;                                             
+end
+                                                                            % if video handle is valid
+roiData.x0.Enable = 'on';                                                   % enable roi selection
 roiData.y0.Enable = 'on';
 roiData.width.Enable = 'on';
 roiData.height.Enable = 'on';
+start.Enable = 'on';                                                        % enable 
+address.Value = [path file];                                                % set address field
 
-VidObj = VideoReader(address.Value);                                        % load and show first frame
-NewImg = readFrame(VidObj);
+NewImg = readFrame(VidObj);                                                 % load first frame
 
-roiData.x0.Limits = [1 VidObj.Width];
+roiData.x0.Limits = [1 VidObj.Width];                                       % set roi limits to the maximum values of the selected image
 roiData.y0.Limits = [1 VidObj.Height];
 roiData.width.Limits = [1 VidObj.Width];
 roiData.height.Limits = [1 VidObj.Height];
 
-roiData.x0.Value = 1;
+roiData.x0.Value = 1;                                                       % define initial region of interest which covers the whole image
 roiData.y0.Value = 1;
 roiData.width.Value = VidObj.Width;
 roiData.height.Value = VidObj.Height;
 
-load.UserData.Width = VidObj.Width;
+load.UserData.Width = VidObj.Width;                                         % keep data of first image and its parameters
 load.UserData.Height = VidObj.Height;
 load.UserData.Image = NewImg;  
 
-UpdateVidObject(vid, roiData, NewImg);
+UpdateVidObject(vid, roiData, NewImg);                                      % add region of interest to the image and show image
 
 end
 
 function AddressFieldChanged(vid, start, roiData, address, load)            % AddressFieldChanged callback
 
 try                                                                         % validity check
-  VidObj = VideoReader(address.Value);
-catch
-  roiData.x0.Enable = 'off';
+  VidObj = VideoReader(address.Value);                                      % try to get video handle
+catch                                                                       % if not possible
+  roiData.x0.Enable = 'off';                                                % disable roi selection
   roiData.y0.Enable = 'off';
   roiData.width.Enable = 'off';
   roiData.height.Enable = 'off';
-  start.Enable = 'off';
+  start.Enable = 'off';                                                     % disable start button
   
-  imshow([], 'Parent', vid);
+  imshow([], 'Parent', vid);                                                % clear previous preview
   
-  return;
+  return;                                             
 end
-
-roiData.x0.Enable = 'on';
+                                                                            % if video handle is valid
+roiData.x0.Enable = 'on';                                                   % enable roi selection
 roiData.y0.Enable = 'on';
 roiData.width.Enable = 'on';
 roiData.height.Enable = 'on';
-start.Enable = 'on';
+start.Enable = 'on';                                                        % enable 
 
-NewImg = readFrame(VidObj);
+NewImg = readFrame(VidObj);                                                 % load first frame
 
-roiData.x0.Limits = [1 VidObj.Width];
+roiData.x0.Limits = [1 VidObj.Width];                                       % set roi limits to the maximum values of the selected image
 roiData.y0.Limits = [1 VidObj.Height];
 roiData.width.Limits = [1 VidObj.Width];
 roiData.height.Limits = [1 VidObj.Height];
 
-roiData.x0.Value = 1;
+roiData.x0.Value = 1;                                                       % define initial region of interest which covers the whole image
 roiData.y0.Value = 1;
 roiData.width.Value = VidObj.Width;
 roiData.height.Value = VidObj.Height;
 
-load.UserData.Width = VidObj.Width;
+load.UserData.Width = VidObj.Width;                                         % keep data of first image and its parameters
 load.UserData.Height = VidObj.Height;
 load.UserData.Image = NewImg;  
 
-UpdateVidObject(vid, roiData, NewImg);
+UpdateVidObject(vid, roiData, NewImg);                                      % add region of interest to the image and show image
 
 end
 
 function StartButtonPushed(fig, start, stop, save, address, load, roiData)  % StartButtonPushed callback
 
-start.Enable = 'off';
-stop.Enable = 'on';
+start.Enable = 'off';                                                       % disable start, save and load buttons
 save.Enable = 'off';
 load.Enable = 'off';
-address.Enable = 'off';
-roiData.x0.Enable = 'off';
+stop.Enable = 'on';                                                         % enable stop button
+address.Enable = 'off';                                                     % disable address field
+roiData.x0.Enable = 'off';                                                  % disable roi selection
 roiData.y0.Enable = 'off';
 roiData.width.Enable = 'off';
 roiData.height.Enable = 'off';
@@ -287,86 +317,93 @@ end
 
 function StopButtonPushed(start, stop, save, address, load, roiData)        % StopButtonPushed callback
 
-start.Enable = 'on';
+start.Enable = 'on';                                                        % enable start, save and load buttons
 save.Enable = 'on';
 load.Enable = 'on';
-stop.Enable = 'off';
-address.Enable = 'on';
-roiData.x0.Enable = 'on';
+stop.Enable = 'off';                                                        % disable stop button
+address.Enable = 'on';                                                      % enable address field
+roiData.x0.Enable = 'on';                                                   % enable roi selection
 roiData.y0.Enable = 'on';
 roiData.width.Enable = 'on';
 roiData.height.Enable = 'on';
   
 end
 
-function SaveButtonPushed(time, motionSignal, address)                      %#ok<INUSL> SaveButtonPushed callback
-uisave({'time', 'motionSignal'}, address.Value);
+function SaveButtonPushed(time, motionSignal, roi, address)                 %#ok<INUSL> SaveButtonPushed callback
+
+address = address.Value(1:end-3);
+address = [ address 'mat'];
+
+uisave({'time', 'motionSignal', 'roi'}, address);                           % save time, motionSignal and roi into mat File
+
 end
 
 function CloseRequestFunction(fig)                                          % CloseRequestFunction callback
+
 delete(fig);                                                                % destroy gui
+
 end
 
-function X0FieldChanged(vid, roiData, load)
+function X0FieldChanged(vid, roiData, load)                                 % X0FieldChanged callback
 
-widthMax = load.UserData.Width-roiData.x0.Value+1;
+widthMax = load.UserData.Width-roiData.x0.Value+1;                          % adapt width, if necessary
 if roiData.width.Value > widthMax
   roiData.width.Value = widthMax;
 end
 
-UpdateVidObject(vid, roiData, load.UserData.Image);
+UpdateVidObject(vid, roiData, load.UserData.Image);                         % add updated region of interest to the image and show image
 
 end
 
-function Y0FieldChanged(vid, roiData, load)
+function Y0FieldChanged(vid, roiData, load)                                 % Y0FieldChanged callback
 
-heightMax = load.UserData.Height-roiData.y0.Value+1;
+heightMax = load.UserData.Height-roiData.y0.Value+1;                        % adapt height, if necessary
 if roiData.height.Value > heightMax
   roiData.height.Value = heightMax;
 end
 
-UpdateVidObject(vid, roiData, load.UserData.Image);
+UpdateVidObject(vid, roiData, load.UserData.Image);                         % add updated region of interest to the image and show image
 
 end
 
-function WidthFieldChanged(vid,roiData,load)
+function WidthFieldChanged(vid,roiData,load)                                % WidthFieldChanged callback
 
-x0Max = load.UserData.Width-roiData.width.Value+1;
+x0Max = load.UserData.Width-roiData.width.Value+1;                          % adapt x0, if necessary
 if roiData.x0.Value > x0Max
   roiData.x0.Value = x0Max;
 end
 
-UpdateVidObject(vid, roiData, load.UserData.Image);
+UpdateVidObject(vid, roiData, load.UserData.Image);                         % add updated region of interest to the image and show image
 
 end
 
-function HeightFieldChanged(vid, roiData, load)
+function HeightFieldChanged(vid, roiData, load)                             % HeightFieldChanged callback
 
-y0Max = load.UserData.Height-roiData.height.Value+1;
+y0Max = load.UserData.Height-roiData.height.Value+1;                        % adapt y0, if necessary
 if roiData.y0.Value > y0Max
   roiData.y0.Value = y0Max;
 end
 
-UpdateVidObject(vid, roiData, load.UserData.Image);
+UpdateVidObject(vid, roiData, load.UserData.Image);                         % add updated region of interest to the image and show image
 
 end
 
 % -------------------------------------------------------------------------
 % Other subfunctions
 % -------------------------------------------------------------------------
-function [image] = AddRoi2Image(image, roiData)
-
-x0    = roiData.x0.Value;
+function [image] = AddRoi2Image(image, roiData)                             % add region of interest in green (for rgb images)
+                                                                            % or white (for grayscale images) colour to image
+x0    = roiData.x0.Value;                                                   % get roi parameters
 xEnd  = roiData.x0.Value + roiData.width.Value - 1;
 y0    = roiData.y0.Value;
 yEnd  = roiData.y0.Value + roiData.height.Value - 1;
 
-if size(image, 3) == 1
+if size(image, 3) == 1                                                      % if image is in grayscale
   image(y0:yEnd, x0:x0+5) = 1;
   image(y0:yEnd, xEnd-5:xEnd) = 1;
   image(y0:y0+5, x0:xEnd) = 1;
   image(yEnd-5:yEnd, x0:xEnd) = 1;
-elseif size(image, 3) == 3
+elseif size(image, 3) == 3                                                  % if image is colored                                            
   image(y0:yEnd, x0:x0+5, 1) = 0;
   image(y0:yEnd, x0:x0+5, 2) = 255;
   image(y0:yEnd, x0:x0+5, 3) = 0;
@@ -383,19 +420,19 @@ end
 
 end
 
-function UpdateVidObject(vid, roiData, image)
+function UpdateVidObject(vid, roiData, image)                               % update and display image
 image = AddRoi2Image(image, roiData);
 imshow(image, 'Parent', vid);
 drawnow;
 end
 
-function [image] = GetExcerpt(image, roiData)
+function [image] = GetExcerpt(image, roiData)                               % extract a region of interest of an image
 
-x0    = roiData.x0.Value;
+x0    = roiData.x0.Value;                                                   % get roi parameters                   
 xEnd  = roiData.x0.Value + roiData.width.Value - 1;
 y0    = roiData.y0.Value;
 yEnd  = roiData.y0.Value + roiData.height.Value - 1;
 
-image = image(y0:yEnd, x0:xEnd, :);
+image = image(y0:yEnd, x0:xEnd, :);                                         %resize image
 
 end
