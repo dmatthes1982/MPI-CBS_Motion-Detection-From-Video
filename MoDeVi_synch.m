@@ -81,15 +81,37 @@ sampleNum = round(time*fsample);
 sampleNum = sampleNum + videoStart - 1;
 
 % -------------------------------------------------------------------------
+% Interpolate the data to get for the motion Signal the same resolution
+% which also the eeg signal has.
+% -------------------------------------------------------------------------
+fprintf('<strong>Interpolate motion signals...</strong>\n');
+
+begsample = sampleNum(1);
+endsample = sampleNum(end);
+sampleNumIntpl = begsample:1:endsample;
+
+numOfSignals = length(motionSignal);
+motionSignalIntpl{numOfSignals} = [];
+
+for i = 1:1:numOfSignals
+  if ~isempty(motionSignal{i})
+    motionSignalIntpl{i} = interp1(sampleNum, motionSignal{i}, ...
+                                      sampleNumIntpl, 'spline');
+  end
+end
+
+% -------------------------------------------------------------------------
 % Save workspace
 % -------------------------------------------------------------------------
 fprintf('Save workspace into MAT file...\n');
-save(motionSigFile, 'fsample', 'motionSignal', 'roi', 'sampleinfo', ...
-      'sampleNum', 'time', 'trialinfo', 'videoStart')
+save(motionSigFile, 'fsample', 'motionSignal', 'motionSignalIntpl', ...
+      'roi', 'sampleinfo', 'sampleNum', 'sampleNumIntpl', 'time', ...
+      'trialinfo', 'videoStart')
 
 % -------------------------------------------------------------------------
 % Clear workspace
 % -------------------------------------------------------------------------
 clear motionSigFile motionSigPath vmrkFile vmrkPath vhdrFile event hdr ...
       types index trigger stimuli duration fsample motionSignal roi ...
-      sampleinfo sampleNum time trialinfo videoStart
+      sampleinfo sampleNum time trialinfo videoStart begsample begsample ...
+      endsample sampleNumIntpl numOfSignals motionSignalIntpl i
