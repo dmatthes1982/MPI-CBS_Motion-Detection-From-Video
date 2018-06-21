@@ -436,7 +436,7 @@ NewImg = readFrame(VidObj);                                                 % lo
 [roiData.height(1:2).Value] = deal(VidObj.Height);
 
 [roiData.x0(3).Value] = deal(VidObj.Width - 200);                           % define the initial base region at top right of the image
-[roiData.y0(3).Value] = deal(0);
+[roiData.y0(3).Value] = deal(1);
 [roiData.width(3).Value] = deal(200);
 [roiData.height(3).Value] = deal(200);
 

@@ -1,8 +1,8 @@
 % -------------------------------------------------------------------------
 % Add directory and subfolders to path
 % -------------------------------------------------------------------------
-clc;
-MoDeVi_init;
+clc;                                                                        % clear workspace
+MoDeVi_init;                                                                % add utilities folder to path
 
 cprintf([0,0.6,0], '<strong>-----------------------------------------------------------</strong>\n');
 cprintf([0,0.6,0], '<strong>Motion detection from Video</strong>\n');
@@ -22,7 +22,7 @@ catch
 end
 
 % -------------------------------------------------------------------------
-% Select associated MAT and VMRK files
+% Select associated MAT, VMRK and VHDR files
 % -------------------------------------------------------------------------
 fprintf('\n<strong>Select files...</strong>\n');
 
@@ -43,32 +43,32 @@ vhdrFile = [vhdrFile '.vhdr'];
 % -------------------------------------------------------------------------
 load(motionSigFile, 'motionSignal', 'roi', 'time');
 
-if ~exist('motionSignal','var') || ~exist('roi','var') || ...
+if ~exist('motionSignal','var') || ~exist('roi','var') || ...               % check if the selected MAT file is valid
     ~exist('time','var')
   cprintf([1,0.5,0], 'The selected MAT-File contains wrong content\n');
   return;
 end
 
-event = ft_read_event(vmrkFile);
-hdr   = ft_read_header(vhdrFile);
+event = ft_read_event(vmrkFile);                                            % get all events from VMRK file
+hdr   = ft_read_header(vhdrFile);                                           % get header informations
 
 % -------------------------------------------------------------------------
 % Extract trigger and sampling frequency
 % -------------------------------------------------------------------------
-fsample = hdr.Fs;
-types = { event(:).type };
+fsample = hdr.Fs;                                                           % extract sampling frequency
+types = { event(:).type };                                                  % get all trigger types
 index = ismember(types, 'Response');
 index = index | ismember(types, 'Stimulus');
-event = event(index);
+event = event(index);                                                       % prune the event matrix (only response and stimulus events are of interest)
 
-trigger     = { event(:).value };
-videoStart  = find(ismember(trigger, 'R128'), 1, 'first');
-stimuli     = contains(trigger, 'S');
-trialinfo   = cell2mat(cellfun(@(x) sscanf(x,'S%d'), trigger(stimuli), ...
+trigger     = { event(:).value };                                           % extract all trigger values from the pruned event matrix
+videoStart  = find(ismember(trigger, 'R128'), 1, 'first');                  % locate first video trigger
+stimuli     = contains(trigger, 'S');                                       % locate all stimulus triggers
+trialinfo   = cell2mat(cellfun(@(x) sscanf(x,'S%d'), trigger(stimuli), ...  % create trialinfo from the set of stimulus triggers
               'UniformOutput', false)');                                    %#ok<*NASGU>
 
-videoStart = event(videoStart).sample;
-sampleinfo = [ event(stimuli).sample ]';
+videoStart = event(videoStart).sample;                                      % estimate sampling point, when recording was started
+sampleinfo = [ event(stimuli).sample ]';                                    % create sampleinfo
 duration = [ event(stimuli).duration ]';
 sampleinfo(:,2) = sampleinfo(:,1) + duration - 1;
 
@@ -77,8 +77,8 @@ sampleinfo(:,2) = sampleinfo(:,1) + duration - 1;
 % -------------------------------------------------------------------------
 fprintf('\n<strong>Estimate sample number vector...</strong>\n');
 
-sampleNum = round(time*fsample);
-sampleNum = sampleNum + videoStart - 1;
+sampleNum = round(time*fsample);                                            % convert video image timestamps to sampling point numbers
+sampleNum = sampleNum + videoStart - 1;                                     % add video start offset
 
 % -------------------------------------------------------------------------
 % Interpolate the data to get for the motion Signal the same resolution
@@ -88,14 +88,14 @@ fprintf('<strong>Interpolate motion signals...</strong>\n');
 
 begsample = sampleNum(1);
 endsample = sampleNum(end);
-sampleNumIntpl = begsample:1:endsample;
+sampleNumIntpl = begsample:1:endsample;                                     % create sampling point vector for the interpolated data
 
-numOfSignals = length(motionSignal);
-motionSignalIntpl{numOfSignals} = [];
+numOfSignals = length(motionSignal);                                        % estimate total number of motion signals
+motionSignalIntpl{numOfSignals} = [];                                       % allocate memory for the interpolated motion signals
 
 for i = 1:1:numOfSignals
   if ~isempty(motionSignal{i})
-    motionSignalIntpl{i} = interp1(sampleNum, motionSignal{i}, ...
+    motionSignalIntpl{i} = interp1(sampleNum, motionSignal{i}, ...          % interpolate motion signals
                                       sampleNumIntpl, 'spline');
   end
 end
@@ -104,7 +104,7 @@ end
 % Save workspace
 % -------------------------------------------------------------------------
 fprintf('Save workspace into MAT file...\n');
-save(motionSigFile, 'fsample', 'motionSignal', 'motionSignalIntpl', ...
+save(motionSigFile, 'fsample', 'motionSignal', 'motionSignalIntpl', ...     % add all estimated values to the dataset with motion signals
       'roi', 'sampleinfo', 'sampleNum', 'sampleNumIntpl', 'time', ...
       'trialinfo', 'videoStart')
 
