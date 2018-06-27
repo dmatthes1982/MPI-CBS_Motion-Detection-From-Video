@@ -28,6 +28,13 @@ vid.YTick = [];
 vid.Position = [20 210 500 290];
 vid.Visible = 'off';
 
+slid = uislider(fig);
+slid.Position = [38 230 445 3];
+slid.MajorTicks = [];
+slid.MinorTicks = [];
+slid.Visible = 'off';
+slid.Enable = 'off';
+
 sig = uiaxes(fig);                                                          % graph, wich shows the motion signal cource during 
 sig.Position = [540 210 500 290];                                           % the video processing 
 sig.XLim = [0 75];
@@ -174,14 +181,15 @@ roi.description(1:3)  = {'first', 'second', 'base'};
 % Link callback functions -------------------------------------------------
 start.ButtonPushedFcn = @(start, evt)StartButtonPushed(fig, start, stop,... % connect callback func StartButtonPushed with corresponding button
                                     save, address, load, roiData, ...
-                                    roiActiv);
-stop.ButtonPushedFcn = @(stop, evt)StopButtonPushed(start, stop, save, ...  % connect callback func StopButtonPushed with corresponding button
-                                    address, load, roiData, roiActiv);
+                                    roiActiv, slid);
+stop.ButtonPushedFcn = @(stop, evt)StopButtonPushed(vid, start, stop, ...   % connect callback func StopButtonPushed with corresponding button
+                                    save, address, load, roiData, ...
+                                    roiActiv, slid);
 save.ButtonPushedFcn = @(save, evt)SaveButtonPushed(time, motionSignal, ... % connect callback func SaveButtonPushed with corresponding button
                                     roi, address); 
-load.ButtonPushedFcn = @(load, evt)LoadButtonPushed(vid, start, ...         % connect callback func LoadButtonPushed with corresponding button
+load.ButtonPushedFcn = @(load, evt)LoadButtonPushed(vid, slid, start, ...   % connect callback func LoadButtonPushed with corresponding button
                                     roiData, roiActiv, address, load);   
-address.ValueChangedFcn = @(address, evt)AddressFieldChanged(vid, ...       % connect callback func AddressFieldChanged with corresponding field
+address.ValueChangedFcn = @(address, evt)AddressFieldChanged(vid, slid, ... % connect callback func AddressFieldChanged with corresponding field
                                     start, roiData, roiActiv, address, ...
                                     load);
 
@@ -225,6 +233,10 @@ roiActiv.cb(2).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % co
                                     start, roiData, roiActiv);
 roiActiv.cb(3).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % connect callback func CheckBoxSwitched with corresponding checkbox of ROI 3 selection
                                     start, roiData, roiActiv);
+
+slid.ValueChangedFcn = @(slid, evt)SliderMoved(slid, vid, load, ...         % connect callback func SliderMoved with corresponding slider
+                                    roiData, roiActiv);
+
 % -------------------------------------------------------------------------
 % Main video processing loop
 % -------------------------------------------------------------------------                                  
@@ -245,6 +257,7 @@ while(1)
 
   if hasFrame(VidObj)                                                   
     OldImg      = readFrame(VidObj);                                        % load first image
+    load.UserData.Image = OldImg;                                           % update image preview buffer, since slider was reset when start was pressed
     numOfFrames = 1;
   end
 
@@ -318,11 +331,11 @@ while(1)
                                     motionSignal, roi, address);
 end
 
-
 % -------------------------------------------------------------------------
 % Callback functions
 % -------------------------------------------------------------------------
-function LoadButtonPushed(vid, start, roiData, roiActiv, address, load)     % LoadButtonPushed callback
+function LoadButtonPushed(vid, slid, start, roiData, roiActiv, address, ... % LoadButtonPushed callback
+                            load)
 
 [file,path] = uigetfile('*.wmv', 'Select video file...');                   % get filename
 
@@ -333,6 +346,8 @@ if ~any(file)                                                               % if
   [roiData.height(:).Enable] = deal('off');
   [roiActiv.cb(:).Enable] = deal('off');
   start.Enable = 'off';                                                     % disable start button
+  slid.Visible = 'off';                                                     % hide video slider
+  slid.Enable = 'off';                                                      % disable video slider
   address.Value = '';                                                       % clear address field
   
   imshow([], 'Parent', vid);                                                % clear previous preview
@@ -349,6 +364,8 @@ catch                                                                       % if
   [roiData.height(:).Enable] = deal('off');
   [roiActiv.cb(:).Enable] = deal('off');
   start.Enable = 'off';                                                     % disable start button
+  slid.Visible = 'off';                                                     % hide video slider
+  slid.Enable = 'off';                                                      % disable video slider
   address.Value = '';                                                       % clear address field
   
   imshow([], 'Parent', vid);                                                % clear previous preview
@@ -366,7 +383,7 @@ if any(status)                                                              % mo
   start.Enable = 'on';
 else
   start.Enable = 'off';
-end                                                        % enable 
+end
 address.Value = [path file];                                                % set address field
 
 NewImg = readFrame(VidObj);                                                 % load first frame
@@ -386,15 +403,21 @@ NewImg = readFrame(VidObj);                                                 % lo
 [roiData.width(3).Value] = deal(200);
 [roiData.height(3).Value] = deal(200);
 
-load.UserData.Width = VidObj.Width;                                         % keep data of first image and its parameters
+load.UserData.VidObj = VidObj;                                              % keep video object, data of first image and its parameters
+load.UserData.Width = VidObj.Width;
 load.UserData.Height = VidObj.Height;
 load.UserData.Image = NewImg;  
 
+slid.Visible = 'on';                                                        % show video slider
+slid.Enable = 'on';                                                         % enable video slider
+slid.Limits = [0 (VidObj.duration*1000-2)];                                 % adapt slider limits to video duration
+slid.Value = 0;                                                             % reset slider setting
 UpdateVidObject(vid, roiData, roiActiv, NewImg);                            % add regions of interest to the image and show image
 
 end
 
-function AddressFieldChanged(vid, start, roiData, roiActiv, address, load)  % AddressFieldChanged callback
+function AddressFieldChanged(vid, slid, start, roiData, roiActiv, ....      % AddressFieldChanged callback
+                              address, load)
 
 try                                                                         % validity check
   VidObj = VideoReader(address.Value);                                      % try to get video handle
@@ -405,7 +428,9 @@ catch                                                                       % if
   [roiData.height(:).Enable] = deal('off');
   [roiActiv.cb(:).Enable] = deal('off');
   start.Enable = 'off';                                                     % disable start button
-  
+  slid.Visible = 'off';                                                     % hide video slider
+  slid.Enable = 'off';                                                      % disable video slider
+
   imshow([], 'Parent', vid);                                                % clear previous preview
   
   return;                                             
@@ -440,20 +465,27 @@ NewImg = readFrame(VidObj);                                                 % lo
 [roiData.width(3).Value] = deal(200);
 [roiData.height(3).Value] = deal(200);
 
-load.UserData.Width = VidObj.Width;                                         % keep data of first image and its parameters
+load.UserData.VidObj = VidObj;                                              % keep video object, data of first image and its parameters
+load.UserData.Width = VidObj.Width;
 load.UserData.Height = VidObj.Height;
 load.UserData.Image = NewImg;  
 
+slid.Visible = 'on';                                                        % show video slider
+slid.Enable = 'on';                                                         % enable video slider
+slid.Limits = [0 (VidObj.duration*1000-2)];                                 % adapt slider limits to video duration
+slid.Value = 0;                                                             % reset slider setting
 UpdateVidObject(vid, roiData, roiActiv, NewImg);                            % add regions of interest to the image and show image
 
 end
 
 function StartButtonPushed(fig, start, stop, save, address, load, ...       % StartButtonPushed callback
-                           roiData, roiActiv)  
+                           roiData, roiActiv, slid)
 
 start.Enable = 'off';                                                       % disable start, save and load buttons
 save.Enable = 'off';
 load.Enable = 'off';
+slid.Enable = 'off';                                                        % disable video slider
+slid.Value = 0;                                                             % reset slider position
 stop.Enable = 'on';                                                         % enable stop button
 address.Enable = 'off';                                                     % disable address field
 [roiData.x0(:).Enable] = deal('off');                                       % disable roi selection
@@ -465,12 +497,13 @@ uiresume(fig);                                                              % ac
 
 end
 
-function StopButtonPushed(start, stop, save, address, load, roiData, ...    % StopButtonPushed callback
-                          roiActiv)
+function StopButtonPushed(vid, start, stop, save, address, load, ...        % StopButtonPushed callback
+                          roiData, roiActiv, slid)
 
 start.Enable = 'on';                                                        % enable start, save and load buttons
 save.Enable = 'on';
 load.Enable = 'on';
+slid.Enable = 'on';                                                         % enable video slider
 stop.Enable = 'off';                                                        % disable stop button
 address.Enable = 'on';                                                      % enable address field
 status = [roiActiv.cb(:).Value];
@@ -479,6 +512,8 @@ status = [roiActiv.cb(:).Value];
 [roiData.width(status).Enable] = deal('on');
 [roiData.height(status).Enable] = deal('on');
 [roiActiv.cb(:).Enable] = deal('on');
+
+UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);               % add updated regions of interest to the image and show image
   
 end
 
@@ -563,7 +598,18 @@ else
   start.Enable = 'off';
 end
 
-UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);
+UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);               % add updated regions of interest to the image and show image
+
+end
+
+function SliderMoved(slid, vid, load, roiData, roiActiv)
+
+VidObj = load.UserData.VidObj;                                              % get video object
+VidObj.CurrentTime = slid.Value/1000;                                       % synchronize slider position with current time in video object
+
+load.UserData.Image = readFrame(VidObj);                                    % load video image which corresponds to slider position and keep it
+
+UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);               % add regions of interest to the updated image and show image
 
 end
 
