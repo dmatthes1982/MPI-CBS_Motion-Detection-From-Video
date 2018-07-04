@@ -16,7 +16,7 @@ cprintf([0,0.6,0], '<strong>----------------------------------------------------
 % -------------------------------------------------------------------------
 try [~] = ft_version;
 catch
-  cprintf([1,0.5,0], '\This script requires the fieldtrip toolbox\n');
+  cprintf([1,0.5,0], '\nThis script requires the fieldtrip toolbox\n');
   cprintf([1,0.5,0], 'But fieldtrip seems not to be on your system.\n');
   return;
 end

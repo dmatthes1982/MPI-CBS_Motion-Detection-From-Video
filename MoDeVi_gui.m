@@ -261,9 +261,9 @@ while(1)
     numOfFrames = 1;
   end
 
-  while hasFrame(VidObj) && strcmp(stop.Enable, 'on')                       % do as long as Frames available or until stop was pushed
+  while hasFrame(VidObj) && strcmp(stop.Enable, 'on')                       % do as long as frames available or until stop was pushed
     NewImg      = readFrame(VidObj);                                        % get new frame
-    numOfFrames = numOfFrames + 1;                                          % increase number of Frames Counter
+    numOfFrames = numOfFrames + 1;                                          % increase number of frames Counter
     sigPointer  = numOfFrames + dispBufLength - 1;                          % determine pointer to current field of the motion signal vector
     timePointer = numOfFrames - 1;                                          % determine pointer to current field of the time vector
     NewImage    = im2double(NewImg);                                        % convert pixel values into double format
@@ -320,7 +320,7 @@ while(1)
   
   for i=1:1:3
     if roi.selected(i) == true
-      roi.dimension{i} = [roiData.x0(i).Value roiData.y0(i).Value ...        % get current selection of roi
+      roi.dimension{i} = [roiData.x0(i).Value roiData.y0(i).Value ...       % get current selection of roi
                           roiData.width(i).Value roiData.height(i).Value];
     else
       roi.dimension{i} = [0 0 0 0];
@@ -337,7 +337,7 @@ end
 function LoadButtonPushed(vid, slid, start, roiData, roiActiv, address, ... % LoadButtonPushed callback
                             load)
 
-[file,path] = uigetfile('*.wmv', 'Select video file...');                   % get filename
+[file, path] = uigetfile('*.wmv', 'Select video file...');                  % get filename
 
 if ~any(file)                                                               % if cancel was pressed
   [roiData.x0(:).Enable] = deal('off');                                     % disable roi selection
@@ -623,17 +623,17 @@ status = [roiActiv.cb(:).Value];
 
 for i = 1:1:3
   if status(i) == true
-    x0    = roiData.x0(i).Value;                                              % get roi parameters
+    x0    = roiData.x0(i).Value;                                            % get roi parameters
     xEnd  = roiData.x0(i).Value + roiData.width(i).Value - 1;
     y0    = roiData.y0(i).Value;
     yEnd  = roiData.y0(i).Value + roiData.height(i).Value - 1;
 
-    if size(image, 3) == 1                                                    % if image is in grayscale
+    if size(image, 3) == 1                                                  % if image is in grayscale
       image(y0:yEnd, x0:x0+5) = 1;
       image(y0:yEnd, xEnd-5:xEnd) = 1;
       image(y0:y0+5, x0:xEnd) = 1;
       image(yEnd-5:yEnd, x0:xEnd) = 1;
-    elseif size(image, 3) == 3                                                % if image is colored
+    elseif size(image, 3) == 3                                              % if image is colored
       image(y0:yEnd, x0:x0+5, 1) = roiColorDef(i,1);
       image(y0:yEnd, x0:x0+5, 2) = roiColorDef(i,2);
       image(y0:yEnd, x0:x0+5, 3) = roiColorDef(i,3);
