@@ -47,7 +47,7 @@ roi.description = {'first', 'second', 'base'};
 % Load video and check options
 % -------------------------------------------------------------------------
 % Check validity of source file specifications
-if isempty(cfg.srcPath)
+if isempty(srcPath)
   [file, path] = uigetfile('*.wmv', 'Select video file...');                % select video
   srcPath = [path file];
 end

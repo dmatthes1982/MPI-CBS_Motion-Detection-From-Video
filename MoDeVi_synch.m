@@ -63,11 +63,24 @@ event = event(index);                                                       % pr
 
 trigger     = { event(:).value };                                           % extract all trigger values from the pruned event matrix
 videoStart  = find(ismember(trigger, 'R128'), 1, 'first');                  % locate first video trigger
+if isempty(videoStart)
+  videoStart  = find(ismember(trigger, 'S128'), 1, 'first');                % formerly S128 was used as video trigger
+end
+if isempty(videoStart)                                                      % quit script if neither R128 nor S128 was found
+  cprintf([1,0.5,0], ['The selected VMRK-File has no video triggers. '...
+                      'Synchronization can not be done!\n']);
+  clear event fsample hdr index motionSigFile motionSignal motionSigPath ...
+        roi time trigger types vhdrFile videoStart vmrkFile vmrkPath
+  return;
+end
+videoStart = event(videoStart).sample;                                      % estimate sampling point, when recording was started
+
 stimuli     = contains(trigger, 'S');                                       % locate all stimulus triggers
+if ~any(ismember(types, 'Response'))
+  stimuli = stimuli & ~contains(trigger, 'S128');                           % if S128 is used as video trigger, remove it from stimuli list
+end
 trialinfo   = cell2mat(cellfun(@(x) sscanf(x,'S%d'), trigger(stimuli), ...  % create trialinfo from the set of stimulus triggers
               'UniformOutput', false)');                                    %#ok<*NASGU>
-
-videoStart = event(videoStart).sample;                                      % estimate sampling point, when recording was started
 sampleinfo = [ event(stimuli).sample ]';                                    % create sampleinfo
 duration = [ event(stimuli).duration ]';
 sampleinfo(:,2) = sampleinfo(:,1) + duration - 1;
