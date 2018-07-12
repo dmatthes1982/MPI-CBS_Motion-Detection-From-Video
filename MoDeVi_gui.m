@@ -224,6 +224,11 @@ save.Position = [260 20 100 30];
 save.Text = 'save';
 save.Enable = 'off';
 
+export  =  uibutton(fig);                                                   % export roi button
+export.Position = [380 20 100 30];
+export.Text = 'export ROIs';
+export.Enable = 'off';
+
 load    = uibutton(fig);                                                    % load video button
 load.Position = [940 20 100 30];
 load.Text = 'load';
@@ -231,7 +236,7 @@ load.Enable = 'on';
 load.UserData = struct('Width', 1000, 'Height', 1000, 'Image', []);
 
 address = uieditfield(fig);                                                 % field, wich contains location and name of selected 
-address.Position = [380 20 540 30];                                         % video file (editable)
+address.Position = [500 20 420 30];                                         % video file (editable)
 
 % Global variables --------------------------------------------------------
 motionSignal(1:5)     = {0};
@@ -242,18 +247,21 @@ roi.description(1:5)  = {'first', 'second', 'third', 'fourth', 'base'};
 
 % Link callback functions -------------------------------------------------
 start.ButtonPushedFcn = @(start, evt)StartButtonPushed(fig, start, stop,... % connect callback func StartButtonPushed with corresponding button
-                                    save, address, load, roiData, ...
-                                    roiActiv, slid);
+                                    save, export, address, load, ...
+                                    roiData, roiActiv, slid);
 stop.ButtonPushedFcn = @(stop, evt)StopButtonPushed(vid, start, stop, ...   % connect callback func StopButtonPushed with corresponding button
-                                    save, address, load, roiData, ...
-                                    roiActiv, slid);
+                                    save, export, address, load, ...
+                                    roiData, roiActiv, slid);
 save.ButtonPushedFcn = @(save, evt)SaveButtonPushed(time, motionSignal, ... % connect callback func SaveButtonPushed with corresponding button
                                     roi, address); 
 load.ButtonPushedFcn = @(load, evt)LoadButtonPushed(vid, slid, start, ...   % connect callback func LoadButtonPushed with corresponding button
-                                    roiData, roiActiv, address, load);   
-address.ValueChangedFcn = @(address, evt)AddressFieldChanged(vid, slid, ... % connect callback func AddressFieldChanged with corresponding field
-                                    start, roiData, roiActiv, address, ...
+                                    export, roiData, roiActiv, address, ...
                                     load);
+export.ButtonPushedFcn = @(export, evt)ExportButtonPushed(roiData, ...      % connect callback func ExportButtonPushed with corresponding button
+                                    roiActiv, address);
+address.ValueChangedFcn = @(address, evt)AddressFieldChanged(vid, slid, ... % connect callback func AddressFieldChanged with corresponding field
+                                    start, export, roiData, roiActiv, ...
+                                    address, load);
 
 roiData.x0(1).ValueChangedFcn = @(x0, evt)X0FieldChanged(vid, roiData, ...  % connect callback func X0FieldChanged with corresponding field of ROI 1 selection
                                     roiActiv, load, roiData.index(1));
@@ -310,20 +318,25 @@ roiData.height(5).ValueChangedFcn = @(height, evt)HeightFieldChanged(...    % co
                                     roiData.index(5));
 
 roiData.select(1).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 1 selection
-                                    vid, start, load, slid, address, ...
-                                    roiData, roiActiv, roiData.index(1));
+                                    vid, start, save, export, load, ...
+                                    slid, address, roiData, roiActiv, ...
+                                    roiData.index(1));
 roiData.select(2).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 2 selection
-                                    vid, start, load, slid, address, ...
-                                    roiData, roiActiv, roiData.index(2));
+                                    vid, start, save, export, load, ...
+                                    slid, address, roiData, roiActiv, ...
+                                    roiData.index(2));
 roiData.select(3).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 3 selection
-                                    vid, start, load, slid, address, ...
-                                    roiData, roiActiv, roiData.index(3));
+                                    vid, start, save, export, load, ...
+                                    slid, address, roiData, roiActiv, ...
+                                    roiData.index(3));
 roiData.select(4).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 4 selection
-                                    vid, start, load, slid, address, ...
-                                    roiData, roiActiv, roiData.index(4));
+                                    vid, start, save, export, load, ...
+                                    slid, address, roiData, roiActiv, ...
+                                    roiData.index(4));
 roiData.select(5).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 5 selection
-                                    vid, start, load, slid, address, ...
-                                    roiData, roiActiv, roiData.index(5));
+                                    vid, start, save, export, load, ...
+                                    slid, address, roiData, roiActiv, ...
+                                    roiData.index(5));
 
 roiActiv.cb(1).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % connect callback func CheckBoxSwitched with corresponding checkbox of ROI 1 selection
                                     start, roiData, roiActiv);
@@ -436,8 +449,8 @@ end
 % -------------------------------------------------------------------------
 % Callback functions
 % -------------------------------------------------------------------------
-function LoadButtonPushed(vid, slid, start, roiData, roiActiv, address, ... % LoadButtonPushed callback
-                            load)
+function LoadButtonPushed(vid, slid, start, export, roiData, roiActiv,  ... % LoadButtonPushed callback
+                            address, load)
 
 [file, path] = uigetfile('*.wmv', 'Select video file...');                  % get filename
 
@@ -449,6 +462,7 @@ if ~any(file)                                                               % if
   [roiData.select(:).Enable] = deal('off');
   [roiActiv.cb(:).Enable] = deal('off');
   start.Enable = 'off';                                                     % disable start button
+  export.Enable = 'off';                                                    % disable export button
   slid.Visible = 'off';                                                     % hide video slider
   slid.Enable = 'off';                                                      % disable video slider
   address.Value = '';                                                       % clear address field
@@ -468,6 +482,7 @@ catch                                                                       % if
   [roiData.select(:).Enable] = deal('off');
   [roiActiv.cb(:).Enable] = deal('off');
   start.Enable = 'off';                                                     % disable start button
+  export.Enable = 'off';                                                    % disable export button
   slid.Visible = 'off';                                                     % hide video slider
   slid.Enable = 'off';                                                      % disable video slider
   address.Value = '';                                                       % clear address field
@@ -486,8 +501,10 @@ status = [roiActiv.cb(:).Value];
 [roiActiv.cb(:).Enable] = deal('on');
 if any(status)                                                              % motion analysis is only possible, if at least one roi is activ                                                           
   start.Enable = 'on';
+  export.Enable = 'on';
 else
   start.Enable = 'off';
+  export.Enable = 'off';
 end
 address.Value = [path file];                                                % set address field
 
@@ -517,12 +534,13 @@ slid.Visible = 'on';                                                        % sh
 slid.Enable = 'on';                                                         % enable video slider
 slid.Limits = [0 (VidObj.duration*1000-2)];                                 % adapt slider limits to video duration
 slid.Value = 0;                                                             % reset slider setting
+
 UpdateVidObject(vid, roiData, roiActiv, NewImg);                            % add regions of interest to the image and show image
 
 end
 
-function AddressFieldChanged(vid, slid, start, roiData, roiActiv, ....      % AddressFieldChanged callback
-                              address, load)
+function AddressFieldChanged(vid, slid, start, export, roiData, ...         % AddressFieldChanged callback
+                              roiActiv, address, load)
 
 try                                                                         % validity check
   VidObj = VideoReader(address.Value);                                      % try to get video handle
@@ -534,6 +552,7 @@ catch                                                                       % if
   [roiData.select(:).Enable] = deal('off');
   [roiActiv.cb(:).Enable] = deal('off');
   start.Enable = 'off';                                                     % disable start button
+  export.Enable = 'off';                                                    % disable export button
   slid.Visible = 'off';                                                     % hide video slider
   slid.Enable = 'off';                                                      % disable video slider
 
@@ -551,8 +570,10 @@ status = [roiActiv.cb(:).Value];
 [roiActiv.cb(:).Enable] = deal('on');
 if any(status)                                                              % motion analysis is only possible, if at least one roi is activ                                                           
   start.Enable = 'on';
+  export.Enable = 'on';
 else
   start.Enable = 'off';
+  export.Enable = 'off';
 end 
 
 NewImg = readFrame(VidObj);                                                 % load first frame
@@ -585,11 +606,12 @@ UpdateVidObject(vid, roiData, roiActiv, NewImg);                            % ad
 
 end
 
-function StartButtonPushed(fig, start, stop, save, address, load, ...       % StartButtonPushed callback
-                           roiData, roiActiv, slid)
+function StartButtonPushed(fig, start, stop, save, export, address, ...     % StartButtonPushed callback
+                           load, roiData, roiActiv, slid)
 
-start.Enable = 'off';                                                       % disable start, save and load buttons
+start.Enable = 'off';                                                       % disable start, save, export and load buttons
 save.Enable = 'off';
+export.Enable = 'off';
 load.Enable = 'off';
 slid.Enable = 'off';                                                        % disable video slider
 slid.Value = 0;                                                             % reset slider position
@@ -605,11 +627,12 @@ uiresume(fig);                                                              % ac
 
 end
 
-function StopButtonPushed(vid, start, stop, save, address, load, ...        % StopButtonPushed callback
-                          roiData, roiActiv, slid)
+function StopButtonPushed(vid, start, stop, save, export, address, ...      % StopButtonPushed callback
+                          load, roiData, roiActiv, slid)
 
-start.Enable = 'on';                                                        % enable start, save and load buttons
+start.Enable = 'on';                                                        % enable start, save, export and load buttons
 save.Enable = 'on';
+export.Enable = 'on';
 load.Enable = 'on';
 slid.Enable = 'on';                                                         % enable video slider
 stop.Enable = 'off';                                                        % disable stop button
@@ -632,6 +655,35 @@ address = address.Value(1:end-3);
 address = [ address 'mat'];
 
 uisave({'time', 'motionSignal', 'roi'}, address);                           % save time, motionSignal and roi into mat File
+
+end
+
+function ExportButtonPushed(roiData, roiActiv, address)
+
+cfg = [];
+cfg.srcPath = address.Value;
+
+cfg.ROI1 = [roiData.x0(1).Value, roiData.y0(1).Value, ...
+            roiData.width(1).Value, roiData.height(1).Value];
+cfg.ROI2 = [roiData.x0(2).Value, roiData.y0(2).Value, ...
+            roiData.width(2).Value, roiData.height(2).Value];
+cfg.ROI3 = [roiData.x0(3).Value, roiData.y0(3).Value, ...
+            roiData.width(3).Value, roiData.height(3).Value];
+cfg.ROI4 = [roiData.x0(4).Value, roiData.y0(4).Value, ...
+            roiData.width(4).Value, roiData.height(4).Value];
+cfg.baseROI = [roiData.x0(5).Value, roiData.y0(5).Value, ...
+               roiData.width(5).Value, roiData.height(5).Value];
+
+cfg.selROI1 = roiActiv.cb(1).Value;
+cfg.selROI2 = roiActiv.cb(2).Value;
+cfg.selROI3 = roiActiv.cb(3).Value;
+cfg.selROI4 = roiActiv.cb(4).Value;
+cfg.selbaseROI = roiActiv.cb(5).Value;
+
+address = address.Value(1:end-4);
+address = [ address '_roi.mat'];
+
+uisave({'cfg'}, address);
 
 end
 
@@ -685,11 +737,14 @@ UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);               % ad
 
 end
 
-function SelectButtonPushed(vid, start, load, slid, address, roiData, ...   % SelectButtonPushed callback
-                              roiActiv, index)
+function SelectButtonPushed(vid, start, save, export, load, slid, ...       % SelectButtonPushed callback
+                              address, roiData, roiActiv, index)
 
 falseSelection = false;
-start.Enable = 'off';                                                       % disable start, save and load buttons
+start.Enable = 'off';                                                       % disable start, save, export and load buttons
+saveButtonStatus = save.Enable;
+save.Enable = 'off';
+export.Enable ='off';
 load.Enable = 'off';
 slid.Enable = 'off';                                                        % disable video slider
 address.Enable = 'off';                                                     % disable address field
@@ -747,11 +802,13 @@ if (y0 + height -1) > load.UserData.Height                                  % ch
 end
 
 pause(1)
-start.Enable = 'on';                                                        % disable start, save and load buttons
+start.Enable = 'on';                                                        % enable start, export and load buttons
+save.Enable = saveButtonStatus;
+export.Enable = 'on';
 load.Enable = 'on';
-slid.Enable = 'on';                                                         % disable video slider
-address.Enable = 'on';                                                      % disable address field
-[roiData.x0(:).Enable] = deal('on');                                        % disable roi selection
+slid.Enable = 'on';                                                         % enable video slider
+address.Enable = 'on';                                                      % enable address field
+[roiData.x0(:).Enable] = deal('on');                                        % enable roi selection
 [roiData.y0(:).Enable] = deal('on');
 [roiData.width(:).Enable] = deal('on');
 [roiData.height(:).Enable] = deal('on');

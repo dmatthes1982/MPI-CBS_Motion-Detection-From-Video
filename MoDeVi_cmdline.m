@@ -234,7 +234,7 @@ function [image] = GeneratePreview(roi, image)
 
 roiColorDef = [0, 255, 0; 255, 255, 0; 0, 0, 255; 255, 0, 255; 255, 0, 0];  % frame colour specification
 
-for i = 1:1:3
+for i = 1:1:length(roi.dimension)
   if roi.selected(i) == true
     x0    = roi.dimension{i}(1);                                            % get roi parameters
     xEnd  = roi.dimension{i}(1) + roi.dimension{i}(3) - 1;
