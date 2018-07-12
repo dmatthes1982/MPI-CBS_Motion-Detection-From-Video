@@ -8,9 +8,13 @@ function MoDeVi_cmdline( cfg )
 %   cfg.srcPath     = path to video, (default: [])
 %   cfg.ROI1        = [x0 y0 width height], (default: [1 1 1920 1080])
 %   cfg.ROI2        = [x0 y0 width height], (default: [1 1 1920 1080])
+%   cfg.ROI3        = [x0 y0 width height], (default: [1 1 1920 1080])
+%   cfg.ROI4        = [x0 y0 width height], (default: [1 1 1920 1080])
 %   cfg.baseROI     = [x0 y0 width height], (default: [1720 1 200 200])
 %   cfg.selROI1     = true or false, (default: true)
 %   cfg.selROI2     = true or false, (default: true)
+%   cfg.selROI3     = true or false, (default: true)
+%   cfg.selROI4     = true or false, (default: true)
 %   cfg.selbaseROI  = true or false, (default: true)
 %
 % NOTE: The regions of interest have to be within the image. Therefore it
@@ -34,14 +38,18 @@ MoDeVi_init;
 srcPath       = MoDeVi_getopt(cfg, 'srcPath', []);
 ROI1          = MoDeVi_getopt(cfg, 'ROI1', [1 1 1920 1080]);
 ROI2          = MoDeVi_getopt(cfg, 'ROI2', [1 1 1920 1080]);
+ROI3          = MoDeVi_getopt(cfg, 'ROI3', [1 1 1920 1080]);
+ROI4          = MoDeVi_getopt(cfg, 'ROI4', [1 1 1920 1080]);
 baseROI       = MoDeVi_getopt(cfg, 'baseROI', [1720 1 200 200]);
 selROI1       = MoDeVi_getopt(cfg, 'selROI1', true);
 selROI2       = MoDeVi_getopt(cfg, 'selROI2', true);
+selROI3       = MoDeVi_getopt(cfg, 'selROI3', true);
+selROI4       = MoDeVi_getopt(cfg, 'selROI4', true);
 selbaseROI    = MoDeVi_getopt(cfg, 'selbaseROI', true);
 
-roi.dimension = {ROI1, ROI2, baseROI};
-roi.selected = [selROI1 selROI2 selbaseROI];
-roi.description = {'first', 'second', 'base'};
+roi.dimension = {ROI1, ROI2, ROI3, ROI4, baseROI};
+roi.selected = [selROI1 selROI2 selROI3 selROI4 selbaseROI];
+roi.description = {'first', 'second', 'third', 'fourth', 'base'};
 
 % -------------------------------------------------------------------------
 % Load video and check options
@@ -100,6 +108,28 @@ if selROI2                                                                  % se
   end
 end
 
+if selROI3                                                                  % third ROI
+  if ~(length(ROI3) == 4)
+    cprintf([1,0.5,0], 'Wrong ROI3 specification. Specify ROI3 = [x0 y0 width height]');
+  end
+  if ( ROI3(1) < 1 || (ROI3(1) + ROI3(3) - 1) > VidObj.Width || ...
+        ROI3(2) < 1 || (ROI3(2) + ROI3(4) - 1) > VidObj.Height )
+    cprintf([1,0.5,0], 'Wrong ROI3 dimension. ROI3 is not within the video image.');
+    return;
+  end
+end
+
+if selROI4                                                                  % fourth ROI
+  if ~(length(ROI4) == 4)
+    cprintf([1,0.5,0], 'Wrong ROI4 specification. Specify ROI4 = [x0 y0 width height]');
+  end
+  if ( ROI4(1) < 1 || (ROI4(1) + ROI4(3) - 1) > VidObj.Width || ...
+        ROI4(2) < 1 || (ROI4(2) + ROI4(4) - 1) > VidObj.Height )
+    cprintf([1,0.5,0], 'Wrong ROI4 dimension. ROI4 is not within the video image.');
+    return;
+  end
+end
+
 if selbaseROI                                                               % baseline ROI
   if ~(length(baseROI) == 4)
     cprintf([1,0.5,0], 'Wrong baseROI specification. Specify baseROI = [x0 y0 width height]');
@@ -140,7 +170,7 @@ end
 VidObj.CurrentTime = 0;                                                     % reset Video Object
 numOfFrames = ceil(VidObj.FrameRate * VidObj.Duration);                     % estimate approximate number of frames
 
-motionSignal(1:3) = {zeros(1, numOfFrames)};                                % allocate memory for the motion signal 
+motionSignal(1:5) = {zeros(1, numOfFrames)};                                % allocate memory for the motion signal
 time              = zeros(1, numOfFrames);                                  % allocate memory for the time vector
 
 if hasFrame(VidObj)                                                   
@@ -162,7 +192,7 @@ while hasFrame(VidObj)                                                      % do
   NewImage    = rgb2gray(NewImage);                                         % convert images into a grayscale images
   OldImage    = rgb2gray(OldImage);
 
-  for i=1:1:3                                                               % do it for all selected regions of interest
+  for i=1:1:length(motionSignal)                                            % do it for all selected regions of interest
     if roi.selected(i) == true
       NewROI      = GetExcerpt(roi, NewImage, i);                           % extract the part of the image, wich is defined as region of interest
       OldROI      = GetExcerpt(roi, OldImage, i);    
@@ -185,9 +215,9 @@ delete(f);                                                                  % de
 
 % After the whole video processing was done
 time = time(1:timePointer);                                                 %#ok<NASGU> % shrink time vector to its actual length                               
-motionSignal{1} = motionSignal{1}(1:sigPointer);                            % shrink motion signal vector to its actual length
-motionSignal{2} = motionSignal{2}(1:sigPointer);
-motionSignal{3} = motionSignal{3}(1:sigPointer);                            %#ok<NASGU>
+for i=1:1:length(motionSignal)
+  motionSignal{i} = motionSignal{i}(1:sigPointer);                          % shrink motion signal vector to its actual length
+end
 
 % save data 
 address = srcPath(1:end-3);
@@ -202,7 +232,7 @@ end
 % -------------------------------------------------------------------------
 function [image] = GeneratePreview(roi, image)
 
-roiColorDef = [0, 255, 0; 255, 255, 0; 255, 0, 0];                          % frame colour specification
+roiColorDef = [0, 255, 0; 255, 255, 0; 0, 0, 255; 255, 0, 255; 255, 0, 0];  % frame colour specification
 
 for i = 1:1:3
   if roi.selected(i) == true

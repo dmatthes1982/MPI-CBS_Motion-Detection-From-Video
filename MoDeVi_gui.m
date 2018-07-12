@@ -18,82 +18,108 @@
 % -------------------------------------------------------------------------
 
 fig = uifigure;                                                             % figure
-fig.Position = [100 300 1060 520];
+fig.Position = [100 220 1060 600];
 fig.Name = 'Motion Detection from Videos';
 fig.CloseRequestFcn = @(fig, event)CloseRequestFunction(fig);               % connect callback func CloseRequestFunction with figure
 
 vid = uiaxes(fig);                                                          % element for displaying the video during the processing
 vid.XTick = [];
 vid.YTick = [];
-vid.Position = [20 210 500 290];
+vid.Position = [20 290 500 290];
 vid.Visible = 'off';
 
 slid = uislider(fig);
-slid.Position = [20 210 490 3];
+slid.Position = [20 290 490 3];
 slid.MajorTicks = [];
 slid.MinorTicks = [];
 slid.Visible = 'off';
 slid.Enable = 'off';
 
 sig = uiaxes(fig);                                                          % graph, wich shows the motion signal cource during 
-sig.Position = [540 210 500 290];                                           % the video processing 
+sig.Position = [540 290 500 290];                                           % the video processing
 sig.XLim = [0 75];
 %sig.YLim = [0 2*10^-4];
 
 label = uilabel(fig);                                                       % text label, which displays the current frame number and
-label.Position = [20 180 980 20];                                           % and the current motion value during video processing
+label.Position = [20 260 980 20];                                           % and the current motion value during video processing
 label.Text = 'Status:';
 
 % Regions of interest - label ---------------------------------------------
 roiLabel.description(1) = uilabel(fig);                                     % text label for regions of interest
 roiLabel.description(2) = uilabel(fig);
 roiLabel.description(3) = uilabel(fig);
-roiLabel.description(1).Position = [20 140 120 20];
-roiLabel.description(2).Position = [20 100 120 20];
-roiLabel.description(3).Position = [20 60 120 20];
+roiLabel.description(4) = uilabel(fig);
+roiLabel.description(5) = uilabel(fig);
+roiLabel.description(1).Position = [20 220 120 20];
+roiLabel.description(2).Position = [20 180 120 20];
+roiLabel.description(3).Position = [20 140 120 20];
+roiLabel.description(4).Position = [20 100 120 20];
+roiLabel.description(5).Position = [20 60 120 20];
 roiLabel.description(1).Text = 'Region of interest 1:';
 roiLabel.description(2).Text = 'Region of interest 2:';
-roiLabel.description(3).Text = 'Baseline :';
+roiLabel.description(3).Text = 'Region of interest 3:';
+roiLabel.description(4).Text = 'Region of interest 4:';
+roiLabel.description(5).Text = 'Baseline :';
 
 roiLabel.x0(1) = uilabel(fig);                                              % text label for x zero point                                             
 roiLabel.x0(2) = uilabel(fig);
 roiLabel.x0(3) = uilabel(fig);
-roiLabel.x0(1).Position = [140 140 40 20];
-roiLabel.x0(2).Position = [140 100 40 20];
-roiLabel.x0(3).Position = [140 60 40 20];
+roiLabel.x0(4) = uilabel(fig);
+roiLabel.x0(5) = uilabel(fig);
+roiLabel.x0(1).Position = [140 220 40 20];
+roiLabel.x0(2).Position = [140 180 40 20];
+roiLabel.x0(3).Position = [140 140 40 20];
+roiLabel.x0(4).Position = [140 100 40 20];
+roiLabel.x0(5).Position = [140 60 40 20];
 [roiLabel.x0(:).Text] = deal('x0');
 
 roiLabel.y0(1) = uilabel(fig);                                              % text label for y zero point                                             
 roiLabel.y0(2) = uilabel(fig);
 roiLabel.y0(3) = uilabel(fig);
-roiLabel.y0(1).Position = [260 140 40 20];
-roiLabel.y0(2).Position = [260 100 40 20];
-roiLabel.y0(3).Position = [260 60 40 20];
+roiLabel.y0(4) = uilabel(fig);
+roiLabel.y0(5) = uilabel(fig);
+roiLabel.y0(1).Position = [260 220 40 20];
+roiLabel.y0(2).Position = [260 180 40 20];
+roiLabel.y0(3).Position = [260 140 40 20];
+roiLabel.y0(4).Position = [260 100 40 20];
+roiLabel.y0(5).Position = [260 60 40 20];
 [roiLabel.y0(:).Text] = deal('y0');
 
 roiLabel.width(1) = uilabel(fig);                                           % text label regions of interest width
 roiLabel.width(2) = uilabel(fig);
 roiLabel.width(3) = uilabel(fig);
-roiLabel.width(1).Position = [380 140 40 20];
-roiLabel.width(2).Position = [380 100 40 20];
-roiLabel.width(3).Position = [380 60 40 20];
+roiLabel.width(4) = uilabel(fig);
+roiLabel.width(5) = uilabel(fig);
+roiLabel.width(1).Position = [380 220 40 20];
+roiLabel.width(2).Position = [380 180 40 20];
+roiLabel.width(3).Position = [380 140 40 20];
+roiLabel.width(4).Position = [380 100 40 20];
+roiLabel.width(5).Position = [380 60 40 20];
 [roiLabel.width(:).Text] = deal('width');
 
 roiLabel.height(1) = uilabel(fig);                                          % text label regions of interest height
 roiLabel.height(2) = uilabel(fig);
 roiLabel.height(3) = uilabel(fig);
-roiLabel.height(1).Position = [500 140 40 20];
-roiLabel.height(2).Position = [500 100 40 20];
-roiLabel.height(3).Position = [500 60 40 20];
+roiLabel.height(4) = uilabel(fig);
+roiLabel.height(5) = uilabel(fig);
+roiLabel.height(1).Position = [500 220 40 20];
+roiLabel.height(2).Position = [500 180 40 20];
+roiLabel.height(3).Position = [500 140 40 20];
+roiLabel.height(4).Position = [500 100 40 20];
+roiLabel.height(5).Position = [500 60 40 20];
 [roiLabel.height(:).Text] = deal('height');
 
 % Regions of interest - fields and roi select buttons ---------------------
 roiData.x0(1) = uieditfield(fig, 'numeric');                                % numeric field, which contains the x zero point
 roiData.x0(2) = uieditfield(fig, 'numeric');                                % of the regions of interest
 roiData.x0(3) = uieditfield(fig, 'numeric');
-roiData.x0(1).Position = [180 140 60 30];
-roiData.x0(2).Position = [180 100 60 30];
-roiData.x0(3).Position = [180 60 60 30];
+roiData.x0(4) = uieditfield(fig, 'numeric');
+roiData.x0(5) = uieditfield(fig, 'numeric');
+roiData.x0(1).Position = [180 220 60 30];
+roiData.x0(2).Position = [180 180 60 30];
+roiData.x0(3).Position = [180 140 60 30];
+roiData.x0(4).Position = [180 100 60 30];
+roiData.x0(5).Position = [180 60 60 30];
 [roiData.x0(:).Value] = deal(1);
 [roiData.x0(:).Limits] = deal([1 1000]);
 [roiData.x0(:).Enable] = deal('off');
@@ -101,9 +127,13 @@ roiData.x0(3).Position = [180 60 60 30];
 roiData.y0(1) = uieditfield(fig, 'numeric');                                % numeric field, which contains the y zero point
 roiData.y0(2) = uieditfield(fig, 'numeric');                                % of the regions of interest
 roiData.y0(3) = uieditfield(fig, 'numeric');
-roiData.y0(1).Position = [300 140 60 30];
-roiData.y0(2).Position = [300 100 60 30];
-roiData.y0(3).Position = [300 60 60 30];
+roiData.y0(4) = uieditfield(fig, 'numeric');
+roiData.y0(5) = uieditfield(fig, 'numeric');
+roiData.y0(1).Position = [300 220 60 30];
+roiData.y0(2).Position = [300 180 60 30];
+roiData.y0(3).Position = [300 140 60 30];
+roiData.y0(4).Position = [300 100 60 30];
+roiData.y0(5).Position = [300 60 60 30];
 [roiData.y0(:).Value] = deal(1);
 [roiData.y0(:).Limits] = deal([1 1000]);
 [roiData.y0(:).Enable] = deal('off');
@@ -111,9 +141,13 @@ roiData.y0(3).Position = [300 60 60 30];
 roiData.width(1) = uieditfield(fig, 'numeric');                             % numeric field, which contains the regions of interest
 roiData.width(2) = uieditfield(fig, 'numeric');                             % width
 roiData.width(3) = uieditfield(fig, 'numeric');
-roiData.width(1).Position = [420 140 60 30];
-roiData.width(2).Position = [420 100 60 30];
-roiData.width(3).Position = [420 60 60 30];
+roiData.width(4) = uieditfield(fig, 'numeric');
+roiData.width(5) = uieditfield(fig, 'numeric');
+roiData.width(1).Position = [420 220 60 30];
+roiData.width(2).Position = [420 180 60 30];
+roiData.width(3).Position = [420 140 60 30];
+roiData.width(4).Position = [420 100 60 30];
+roiData.width(5).Position = [420 60 60 30];
 [roiData.width(:).Value] = deal(1000);
 [roiData.width(:).Limits] = deal([1 1000]);
 [roiData.width(:).Enable] = deal('off');
@@ -121,9 +155,13 @@ roiData.width(3).Position = [420 60 60 30];
 roiData.height(1) = uieditfield(fig, 'numeric');                            % numeric field, which contains the regions of interest
 roiData.height(2) = uieditfield(fig, 'numeric');                            % height
 roiData.height(3) = uieditfield(fig, 'numeric');
-roiData.height(1).Position = [540 140 60 30];
-roiData.height(2).Position = [540 100 60 30];
-roiData.height(3).Position = [540 60 60 30];
+roiData.height(4) = uieditfield(fig, 'numeric');
+roiData.height(5) = uieditfield(fig, 'numeric');
+roiData.height(1).Position = [540 220 60 30];
+roiData.height(2).Position = [540 180 60 30];
+roiData.height(3).Position = [540 140 60 30];
+roiData.height(4).Position = [540 100 60 30];
+roiData.height(5).Position = [540 60 60 30];
 [roiData.height(:).Value] = deal(1000);
 [roiData.height(:).Limits] = deal([1 1000]);
 [roiData.height(:).Enable] = deal('off');
@@ -131,27 +169,41 @@ roiData.height(3).Position = [540 60 60 30];
 roiData.select(1) = uibutton(fig);                                          % roi select button for graphical selection
 roiData.select(2) = uibutton(fig);
 roiData.select(3) = uibutton(fig);
-roiData.select(1).Position = [620 140 100 30];
-roiData.select(2).Position = [620 100 100 30];
-roiData.select(3).Position = [620 60 100 30];
+roiData.select(4) = uibutton(fig);
+roiData.select(5) = uibutton(fig);
+roiData.select(1).Position = [620 220 100 30];
+roiData.select(2).Position = [620 180 100 30];
+roiData.select(3).Position = [620 140 100 30];
+roiData.select(4).Position = [620 100 100 30];
+roiData.select(5).Position = [620 60 100 30];
 roiData.select(1).Text = 'Select ROI 1';
 roiData.select(2).Text = 'Select ROI 2';
-roiData.select(3).Text = 'Select base ROI';
+roiData.select(3).Text = 'Select ROI 3';
+roiData.select(4).Text = 'Select ROI 4';
+roiData.select(5).Text = 'Select base ROI';
 [roiData.select(:).Enable] = deal('off');
 
 roiData.index(1) = 1;                                                       % add index number to the different regions
 roiData.index(2) = 2;
 roiData.index(3) = 3;
+roiData.index(4) = 4;
+roiData.index(5) = 5;
 
 % Regions of interest - activate ------------------------------------------
 roiActiv.cb(1) = uicheckbox(fig);
 roiActiv.cb(2) = uicheckbox(fig);
 roiActiv.cb(3) = uicheckbox(fig);
-roiActiv.cb(1).Position = [740 132 120 30];
-roiActiv.cb(2).Position = [740 92 120 30];
-roiActiv.cb(3).Position = [740 52 120 30];
+roiActiv.cb(4) = uicheckbox(fig);
+roiActiv.cb(5) = uicheckbox(fig);
+roiActiv.cb(1).Position = [740 212 120 30];
+roiActiv.cb(2).Position = [740 172 120 30];
+roiActiv.cb(3).Position = [740 132 120 30];
+roiActiv.cb(4).Position = [740 92 120 30];
+roiActiv.cb(5).Position = [740 52 120 30];
 roiActiv.cb(1).Text = 'Activate ROI 1';
 roiActiv.cb(2).Text = 'Activate ROI 2';
+roiActiv.cb(3).Text = 'Activate ROI 3';
+roiActiv.cb(4).Text = 'Activate ROI 4';
 roiActiv.cb(3).Text = 'Activate base ROI';
 [roiActiv.cb(:).Enable] = deal('off');
 [roiActiv.cb(:).Value] = deal(1);
@@ -182,11 +234,11 @@ address = uieditfield(fig);                                                 % fi
 address.Position = [380 20 540 30];                                         % video file (editable)
 
 % Global variables --------------------------------------------------------
-motionSignal(1:3)     = {0};
+motionSignal(1:5)     = {0};
 time                  = 0;
-roi.dimension{3}       = [];
-roi.selected(1:3)     = [false false false];
-roi.description(1:3)  = {'first', 'second', 'base'};
+roi.dimension{5}      = [];
+roi.selected(1:5)     = [false false false false false];
+roi.description(1:5)  = {'first', 'second', 'third', 'fourth', 'base'};
 
 % Link callback functions -------------------------------------------------
 start.ButtonPushedFcn = @(start, evt)StartButtonPushed(fig, start, stop,... % connect callback func StartButtonPushed with corresponding button
@@ -209,14 +261,22 @@ roiData.x0(2).ValueChangedFcn = @(x0, evt)X0FieldChanged(vid, roiData, ...  % co
                                     roiActiv, load, roiData.index(2));
 roiData.x0(3).ValueChangedFcn = @(x0, evt)X0FieldChanged(vid, roiData, ...  % connect callback func X0FieldChanged with corresponding field of ROI 3 selection
                                     roiActiv, load, roiData.index(3));                                  
-                                  
+roiData.x0(4).ValueChangedFcn = @(x0, evt)X0FieldChanged(vid, roiData, ...  % connect callback func X0FieldChanged with corresponding field of ROI 4 selection
+                                    roiActiv, load, roiData.index(4));
+roiData.x0(5).ValueChangedFcn = @(x0, evt)X0FieldChanged(vid, roiData, ...  % connect callback func X0FieldChanged with corresponding field of ROI 5 selection
+                                    roiActiv, load, roiData.index(5));
+
 roiData.y0(1).ValueChangedFcn = @(y0, evt)Y0FieldChanged(vid, roiData, ...  % connect callback func Y0FieldChanged with corresponding field of ROI 1 selection
                                     roiActiv, load, roiData.index(1));
 roiData.y0(2).ValueChangedFcn = @(y0, evt)Y0FieldChanged(vid, roiData, ...  % connect callback func Y0FieldChanged with corresponding field of ROI 2 selection
                                     roiActiv, load, roiData.index(2));
 roiData.y0(3).ValueChangedFcn = @(y0, evt)Y0FieldChanged(vid, roiData, ...  % connect callback func Y0FieldChanged with corresponding field of ROI 3 selection
                                     roiActiv, load, roiData.index(3)); 
-                                 
+roiData.y0(4).ValueChangedFcn = @(y0, evt)Y0FieldChanged(vid, roiData, ...  % connect callback func Y0FieldChanged with corresponding field of ROI 4 selection
+                                    roiActiv, load, roiData.index(4));
+roiData.y0(5).ValueChangedFcn = @(y0, evt)Y0FieldChanged(vid, roiData, ...  % connect callback func Y0FieldChanged with corresponding field of ROI 5 selection
+                                    roiActiv, load, roiData.index(5));
+
 roiData.width(1).ValueChangedFcn = @(width, evt)WidthFieldChanged(vid, ...  % connect callback func WidthFieldChanged with corresponding field of ROI 1 selection
                                     roiData, roiActiv, load, ...
                                     roiData.index(1));
@@ -225,7 +285,13 @@ roiData.width(2).ValueChangedFcn = @(width, evt)WidthFieldChanged(vid, ...  % co
                                     roiData.index(2));
 roiData.width(3).ValueChangedFcn = @(width, evt)WidthFieldChanged(vid, ...  % connect callback func WidthFieldChanged with corresponding field of ROI 3 selection
                                     roiData, roiActiv, load, ...
-                                    roiData.index(3)); 
+                                    roiData.index(3));
+roiData.width(4).ValueChangedFcn = @(width, evt)WidthFieldChanged(vid, ...  % connect callback func WidthFieldChanged with corresponding field of ROI 4 selection
+                                    roiData, roiActiv, load, ...
+                                    roiData.index(4));
+roiData.width(5).ValueChangedFcn = @(width, evt)WidthFieldChanged(vid, ...  % connect callback func WidthFieldChanged with corresponding field of ROI 5 selection
+                                    roiData, roiActiv, load, ...
+                                    roiData.index(5));
 
 roiData.height(1).ValueChangedFcn = @(height, evt)HeightFieldChanged(...    % connect callback func HeightFieldChanged with corresponding field of ROI 1 selection
                                     vid, roiData, roiActiv, load, ...
@@ -236,6 +302,12 @@ roiData.height(2).ValueChangedFcn = @(height, evt)HeightFieldChanged(...    % co
 roiData.height(3).ValueChangedFcn = @(height, evt)HeightFieldChanged(...    % connect callback func HeightFieldChanged with corresponding field of ROI 3 selection
                                     vid, roiData, roiActiv, load, ...
                                     roiData.index(3));
+roiData.height(4).ValueChangedFcn = @(height, evt)HeightFieldChanged(...    % connect callback func HeightFieldChanged with corresponding field of ROI 4 selection
+                                    vid, roiData, roiActiv, load, ...
+                                    roiData.index(4));
+roiData.height(5).ValueChangedFcn = @(height, evt)HeightFieldChanged(...    % connect callback func HeightFieldChanged with corresponding field of ROI 5 selection
+                                    vid, roiData, roiActiv, load, ...
+                                    roiData.index(5));
 
 roiData.select(1).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 1 selection
                                     vid, start, load, slid, address, ...
@@ -246,12 +318,22 @@ roiData.select(2).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % co
 roiData.select(3).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 3 selection
                                     vid, start, load, slid, address, ...
                                     roiData, roiActiv, roiData.index(3));
+roiData.select(4).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 4 selection
+                                    vid, start, load, slid, address, ...
+                                    roiData, roiActiv, roiData.index(4));
+roiData.select(5).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 5 selection
+                                    vid, start, load, slid, address, ...
+                                    roiData, roiActiv, roiData.index(5));
 
 roiActiv.cb(1).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % connect callback func CheckBoxSwitched with corresponding checkbox of ROI 1 selection
                                     start, roiData, roiActiv);
 roiActiv.cb(2).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % connect callback func CheckBoxSwitched with corresponding checkbox of ROI 2 selection
                                     start, roiData, roiActiv);
 roiActiv.cb(3).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % connect callback func CheckBoxSwitched with corresponding checkbox of ROI 3 selection
+                                    start, roiData, roiActiv);
+roiActiv.cb(4).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % connect callback func CheckBoxSwitched with corresponding checkbox of ROI 4 selection
+                                    start, roiData, roiActiv);
+roiActiv.cb(5).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % connect callback func CheckBoxSwitched with corresponding checkbox of ROI 5 selection
                                     start, roiData, roiActiv);
 
 slid.ValueChangedFcn = @(slid, evt)SliderMoved(slid, vid, load, ...         % connect callback func SliderMoved with corresponding slider
@@ -272,7 +354,7 @@ while(1)
   numOfFrames = ceil(VidObj.FrameRate * VidObj.Duration);                   % estimate approximate number of frames
 
   dispBufLength     = 75;                                                   % determine length of display buffer for visualization
-  motionSignal(1:3) = {zeros(1, numOfFrames + dispBufLength)};              % allocate memory for the motion signal 
+  motionSignal(1:5) = {zeros(1, numOfFrames + dispBufLength)};              % allocate memory for the motion signal
   time              = zeros(1, numOfFrames);                                % allocate memory for the time vector
 
   if hasFrame(VidObj)                                                   
@@ -293,7 +375,7 @@ while(1)
     
     status = [roiActiv.cb(:).Value];                                        % check which regions of interest are selected
     
-    for i=1:1:3                                                             % do it for all selected regions of interest
+    for i=1:1:length(motionSignal)                                          % do it for all selected regions of interest
       if status(i) == true
         NewROI      = GetExcerpt(NewImage, roiData, i);                     % extract the part of the image, wich is defined as region of interest
         OldROI      = GetExcerpt(OldImage, roiData, i);    
@@ -307,8 +389,8 @@ while(1)
     DiffImage = NewImage - OldImage;
     imshow(AddRoi2Image(DiffImage, roiData, roiActiv), 'Parent', vid);      % display diffence of current grayscale image and its predecessor
     
-    sigColour = {'green', 'yellow', 'red'};
-    for i=1:1:3                                                             % update motion signal time course for all selected regions of interest
+    sigColour = {'green', 'yellow', 'blue', 'magenta', 'red'};
+    for i=1:1:length(motionSignal)                                          % update motion signal time course for all selected regions of interest
       if status(i) == true
         plot(sig, motionSignal{i}((numOfFrames - 1):1: ...
               (numOfFrames + 75 - 1)), 'Color', sigColour{i}); 
@@ -319,10 +401,10 @@ while(1)
     hold(sig, 'off');
     warning on;
     
-    msg = sprintf('Status: Frame: %d - ', numOfFrames);                     % update text label
-    for i = 1:1:3
+    msg = sprintf('Status: Frame: %d ', numOfFrames);                       % update text label
+    for i = 1:1:length(motionSignal)
       if status(i) == true
-        msg = [msg sprintf('    %s ROI Value: %d ', roi.description{i}, ...                        
+        msg = [msg sprintf('    %s ROI Val.: %d ', roi.description{i}, ...
                        motionSignal{i}(numOfFrames + 75 - 1))];             %#ok<AGROW>
       end
     end
@@ -333,12 +415,12 @@ while(1)
   
   % After either the whole video processing was done or stop button pushed
   time = time(1:timePointer);                                               % shrink time vector to its actual length                               
-  motionSignal{1} = motionSignal{1}(dispBufLength+1:sigPointer);            % shrink motion signal vector to its actual length
-  motionSignal{2} = motionSignal{2}(dispBufLength+1:sigPointer);
-  motionSignal{3} = motionSignal{3}(dispBufLength+1:sigPointer);
+  for i=1:1:length(motionSignal)
+    motionSignal{i} = motionSignal{i}(dispBufLength+1:sigPointer);          % shrink motion signal vector to its actual length
+  end
   roi.selected(:) = [roiActiv.cb(:).Value];
   
-  for i=1:1:3
+  for i=1:1:length(motionSignal)
     if roi.selected(i) == true
       roi.dimension{i} = [roiData.x0(i).Value roiData.y0(i).Value ...       % get current selection of roi
                           roiData.width(i).Value roiData.height(i).Value];
@@ -416,15 +498,15 @@ NewImg = readFrame(VidObj);                                                 % lo
 [roiData.width(:).Limits] = deal([1 VidObj.Width]);
 [roiData.height(:).Limits] = deal([1 VidObj.Height]);
 
-[roiData.x0(1:2).Value] = deal(1);                                          % define initial regions of interest which cover the whole image
-[roiData.y0(1:2).Value] = deal(1);
-[roiData.width(1:2).Value] = deal(VidObj.Width);
-[roiData.height(1:2).Value] = deal(VidObj.Height);
+[roiData.x0(1:4).Value] = deal(1);                                          % define initial regions of interest which cover the whole image
+[roiData.y0(1:4).Value] = deal(1);
+[roiData.width(1:4).Value] = deal(VidObj.Width);
+[roiData.height(1:4).Value] = deal(VidObj.Height);
 
-[roiData.x0(3).Value] = deal(VidObj.Width - 200);                           % define the initial base region at top right of the image
-[roiData.y0(3).Value] = deal(1);
-[roiData.width(3).Value] = deal(200);
-[roiData.height(3).Value] = deal(200);
+[roiData.x0(5).Value] = deal(VidObj.Width - 200);                           % define the initial base region at top right of the image
+[roiData.y0(5).Value] = deal(1);
+[roiData.width(5).Value] = deal(200);
+[roiData.height(5).Value] = deal(200);
 
 load.UserData.VidObj = VidObj;                                              % keep video object, data of first image and its parameters
 load.UserData.Width = VidObj.Width;
@@ -480,15 +562,15 @@ NewImg = readFrame(VidObj);                                                 % lo
 [roiData.width(:).Limits] = deal([1 VidObj.Width]);
 [roiData.height(:).Limits] = deal([1 VidObj.Height]);
 
-[roiData.x0(1:2).Value] = deal(1);                                          % define initial regions of interest which cover the whole image
-[roiData.y0(1:2).Value] = deal(1);
-[roiData.width(1:2).Value] = deal(VidObj.Width);
-[roiData.height(1:2).Value] = deal(VidObj.Height);
+[roiData.x0(1:4).Value] = deal(1);                                          % define initial regions of interest which cover the whole image
+[roiData.y0(1:4).Value] = deal(1);
+[roiData.width(1:4).Value] = deal(VidObj.Width);
+[roiData.height(1:4).Value] = deal(VidObj.Height);
 
-[roiData.x0(3).Value] = deal(VidObj.Width - 200);                           % define the initial base region at top right of the image
-[roiData.y0(3).Value] = deal(1);
-[roiData.width(3).Value] = deal(200);
-[roiData.height(3).Value] = deal(200);
+[roiData.x0(5).Value] = deal(VidObj.Width - 200);                           % define the initial base region at top right of the image
+[roiData.y0(5).Value] = deal(1);
+[roiData.width(5).Value] = deal(200);
+[roiData.height(5).Value] = deal(200);
 
 load.UserData.VidObj = VidObj;                                              % keep video object, data of first image and its parameters
 load.UserData.Width = VidObj.Width;
@@ -734,10 +816,10 @@ end
 % -------------------------------------------------------------------------
 function [image] = AddRoi2Image(image, roiData, roiActiv)                   % add regions of interest in different colours (for rgb images)
                                                                             % or white (for grayscale images) colour to image
-roiColorDef = [0, 255, 0; 255, 255, 0; 255, 0, 0];
+roiColorDef = [0, 255, 0; 255, 255, 0; 0, 0, 255; 255, 0, 255; 255, 0, 0];  % frame colour specification
 status = [roiActiv.cb(:).Value]; 
 
-for i = 1:1:3
+for i = 1:1:5
   if status(i) == true
     x0    = roiData.x0(i).Value;                                            % get roi parameters
     xEnd  = roiData.x0(i).Value + roiData.width(i).Value - 1;
