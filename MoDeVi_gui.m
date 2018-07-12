@@ -29,7 +29,7 @@ vid.Position = [20 210 500 290];
 vid.Visible = 'off';
 
 slid = uislider(fig);
-slid.Position = [38 230 445 3];
+slid.Position = [20 210 490 3];
 slid.MajorTicks = [];
 slid.MinorTicks = [];
 slid.Visible = 'off';
@@ -87,7 +87,7 @@ roiLabel.height(2).Position = [500 100 40 20];
 roiLabel.height(3).Position = [500 60 40 20];
 [roiLabel.height(:).Text] = deal('height');
 
-% Regions of interest - fields --------------------------------------------
+% Regions of interest - fields and roi select buttons ---------------------
 roiData.x0(1) = uieditfield(fig, 'numeric');                                % numeric field, which contains the x zero point
 roiData.x0(2) = uieditfield(fig, 'numeric');                                % of the regions of interest
 roiData.x0(3) = uieditfield(fig, 'numeric');
@@ -128,6 +128,17 @@ roiData.height(3).Position = [540 60 60 30];
 [roiData.height(:).Limits] = deal([1 1000]);
 [roiData.height(:).Enable] = deal('off');
 
+roiData.select(1) = uibutton(fig);                                          % roi select button for graphical selection
+roiData.select(2) = uibutton(fig);
+roiData.select(3) = uibutton(fig);
+roiData.select(1).Position = [620 140 100 30];
+roiData.select(2).Position = [620 100 100 30];
+roiData.select(3).Position = [620 60 100 30];
+roiData.select(1).Text = 'Select ROI 1';
+roiData.select(2).Text = 'Select ROI 2';
+roiData.select(3).Text = 'Select base ROI';
+[roiData.select(:).Enable] = deal('off');
+
 roiData.index(1) = 1;                                                       % add index number to the different regions
 roiData.index(2) = 2;
 roiData.index(3) = 3;
@@ -136,15 +147,14 @@ roiData.index(3) = 3;
 roiActiv.cb(1) = uicheckbox(fig);
 roiActiv.cb(2) = uicheckbox(fig);
 roiActiv.cb(3) = uicheckbox(fig);
-roiActiv.cb(1).Position = [620 132 120 30];
-roiActiv.cb(2).Position = [620 92 120 30];
-roiActiv.cb(3).Position = [620 52 120 30];
-roiActiv.cb(1).Text = 'Select ROI 1';
-roiActiv.cb(2).Text = 'Select ROI 2';
-roiActiv.cb(3).Text = 'Select base ROI';
+roiActiv.cb(1).Position = [740 132 120 30];
+roiActiv.cb(2).Position = [740 92 120 30];
+roiActiv.cb(3).Position = [740 52 120 30];
+roiActiv.cb(1).Text = 'Activate ROI 1';
+roiActiv.cb(2).Text = 'Activate ROI 2';
+roiActiv.cb(3).Text = 'Activate base ROI';
 [roiActiv.cb(:).Enable] = deal('off');
 [roiActiv.cb(:).Value] = deal(1);
-
 
 % Main control buttons ----------------------------------------------------
 start   = uibutton(fig);                                                    % start processing button
@@ -225,8 +235,18 @@ roiData.height(2).ValueChangedFcn = @(height, evt)HeightFieldChanged(...    % co
                                     roiData.index(2));
 roiData.height(3).ValueChangedFcn = @(height, evt)HeightFieldChanged(...    % connect callback func HeightFieldChanged with corresponding field of ROI 3 selection
                                     vid, roiData, roiActiv, load, ...
-                                    roiData.index(3));                                   
-             
+                                    roiData.index(3));
+
+roiData.select(1).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 1 selection
+                                    vid, start, load, slid, address, ...
+                                    roiData, roiActiv, roiData.index(1));
+roiData.select(2).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 2 selection
+                                    vid, start, load, slid, address, ...
+                                    roiData, roiActiv, roiData.index(2));
+roiData.select(3).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 3 selection
+                                    vid, start, load, slid, address, ...
+                                    roiData, roiActiv, roiData.index(3));
+
 roiActiv.cb(1).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % connect callback func CheckBoxSwitched with corresponding checkbox of ROI 1 selection
                                     start, roiData, roiActiv);
 roiActiv.cb(2).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % connect callback func CheckBoxSwitched with corresponding checkbox of ROI 2 selection
@@ -278,7 +298,7 @@ while(1)
         NewROI      = GetExcerpt(NewImage, roiData, i);                     % extract the part of the image, wich is defined as region of interest
         OldROI      = GetExcerpt(OldImage, roiData, i);    
       
-        motionSignal{i}(sigPointer) = mean(mean((OldROI - NewROI).^2));      % estimate current value
+        motionSignal{i}(sigPointer) = mean(mean((OldROI - NewROI).^2));     % estimate current value
       end
     end
     time(timePointer) = VidObj.CurrentTime;                                 % add current timestamp to time vector
@@ -344,6 +364,7 @@ if ~any(file)                                                               % if
   [roiData.y0(:).Enable] = deal('off');
   [roiData.width(:).Enable] = deal('off');
   [roiData.height(:).Enable] = deal('off');
+  [roiData.select(:).Enable] = deal('off');
   [roiActiv.cb(:).Enable] = deal('off');
   start.Enable = 'off';                                                     % disable start button
   slid.Visible = 'off';                                                     % hide video slider
@@ -362,6 +383,7 @@ catch                                                                       % if
   [roiData.y0(:).Enable] = deal('off');
   [roiData.width(:).Enable] = deal('off');
   [roiData.height(:).Enable] = deal('off');
+  [roiData.select(:).Enable] = deal('off');
   [roiActiv.cb(:).Enable] = deal('off');
   start.Enable = 'off';                                                     % disable start button
   slid.Visible = 'off';                                                     % hide video slider
@@ -378,6 +400,7 @@ status = [roiActiv.cb(:).Value];
 [roiData.y0(status).Enable] = deal('on');
 [roiData.width(status).Enable] = deal('on');
 [roiData.height(status).Enable] = deal('on');
+[roiData.select(status).Enable] = deal('on');
 [roiActiv.cb(:).Enable] = deal('on');
 if any(status)                                                              % motion analysis is only possible, if at least one roi is activ                                                           
   start.Enable = 'on';
@@ -426,6 +449,7 @@ catch                                                                       % if
   [roiData.y0(:).Enable] = deal('off');
   [roiData.width(:).Enable] = deal('off');
   [roiData.height(:).Enable] = deal('off');
+  [roiData.select(:).Enable] = deal('off');
   [roiActiv.cb(:).Enable] = deal('off');
   start.Enable = 'off';                                                     % disable start button
   slid.Visible = 'off';                                                     % hide video slider
@@ -441,6 +465,7 @@ status = [roiActiv.cb(:).Value];
 [roiData.y0(status).Enable] = deal('on');
 [roiData.width(status).Enable] = deal('on');
 [roiData.height(status).Enable] = deal('on');
+[roiData.select(status).Enable] = deal('on');
 [roiActiv.cb(:).Enable] = deal('on');
 if any(status)                                                              % motion analysis is only possible, if at least one roi is activ                                                           
   start.Enable = 'on';
@@ -492,6 +517,7 @@ address.Enable = 'off';                                                     % di
 [roiData.y0(:).Enable] = deal('off');
 [roiData.width(:).Enable] = deal('off');
 [roiData.height(:).Enable] = deal('off');
+[roiData.select(:).Enable] = deal('off');
 [roiActiv.cb(:).Enable] = deal('off');
 uiresume(fig);                                                              % activate video processing in the main loop 
 
@@ -511,6 +537,7 @@ status = [roiActiv.cb(:).Value];
 [roiData.y0(status).Enable] = deal('on');
 [roiData.width(status).Enable] = deal('on');
 [roiData.height(status).Enable] = deal('on');
+[roiData.select(status).Enable] = deal('on');
 [roiActiv.cb(:).Enable] = deal('on');
 
 UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);               % add updated regions of interest to the image and show image
@@ -576,6 +603,93 @@ UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);               % ad
 
 end
 
+function SelectButtonPushed(vid, start, load, slid, address, roiData, ...   % SelectButtonPushed callback
+                              roiActiv, index)
+
+falseSelection = false;
+start.Enable = 'off';                                                       % disable start, save and load buttons
+load.Enable = 'off';
+slid.Enable = 'off';                                                        % disable video slider
+address.Enable = 'off';                                                     % disable address field
+[roiData.x0(:).Enable] = deal('off');                                       % disable roi selection
+[roiData.y0(:).Enable] = deal('off');
+[roiData.width(:).Enable] = deal('off');
+[roiData.height(:).Enable] = deal('off');
+[roiData.select(:).Enable] = deal('off');
+[roiActiv.cb(:).Enable] = deal('off');
+
+h = figure;
+warning('off', 'Images:initSize:adjustingMag');
+imshow(load.UserData.Image);
+warning('on', 'Images:initSize:adjustingMag');
+rect = getrect(h);
+rect = round(rect);
+
+x0 = rect(1);
+y0 = rect(2);
+width = rect(3);
+height = rect(4);
+
+if x0 > load.UserData.Width                                                 % do nothing, if selection is on the right side of the image
+  falseSelection = true;
+end
+
+if y0 > load.UserData.Height                                                % do nothing, if selection is below the image
+  falseSelection = true;
+end
+
+if (x0 + width) < 6                                                         % do nothing, if selection is on the left side of the image
+  falseSelection = true;
+end
+
+if (y0 + height) < 6                                                        % do nothing, if selection is over the image
+  falseSelection = true;
+end
+
+if x0 < 1                                                                   % check if horizontal zero point is within the image
+  x0 = 1;
+  width = width + x0 + 1;
+end
+
+if y0 < 1                                                                   % check if vertical zero point is within the image
+  y0 = 1;
+  height = height + y0 + 1;
+end
+
+if (x0 + width -1) > load.UserData.Width                                    % check if horizontal end point is within the image
+  width = load.UserData.Width - x0 + 1;
+end
+
+if (y0 + height -1) > load.UserData.Height                                  % check if vertical end point is within the image
+  height = load.UserData.Height - y0 + 1;
+end
+
+pause(1)
+start.Enable = 'on';                                                        % disable start, save and load buttons
+load.Enable = 'on';
+slid.Enable = 'on';                                                         % disable video slider
+address.Enable = 'on';                                                      % disable address field
+[roiData.x0(:).Enable] = deal('on');                                        % disable roi selection
+[roiData.y0(:).Enable] = deal('on');
+[roiData.width(:).Enable] = deal('on');
+[roiData.height(:).Enable] = deal('on');
+[roiData.select(:).Enable] = deal('on');
+[roiActiv.cb(:).Enable] = deal('on');
+close(h);
+
+if falseSelection
+  return;
+end
+
+roiData.x0(index).Value = x0;                                               % adjust region of interest
+roiData.y0(index).Value = y0;
+roiData.width(index).Value = width;
+roiData.height(index).Value = height;
+
+UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);               % add regions of interest to the updated image and show image
+
+end
+
 function CheckBoxSwitched(vid, load, start, roiData, roiActiv)
 
 status = ~[roiActiv.cb(:).Value];                                           
@@ -584,6 +698,7 @@ status = ~[roiActiv.cb(:).Value];
 [roiData.y0(status).Enable] = deal('off');
 [roiData.width(status).Enable] = deal('off');
 [roiData.height(status).Enable] = deal('off');
+[roiData.select(status).Enable] = deal('off');
 
 status = [roiActiv.cb(:).Value];
 
@@ -591,6 +706,7 @@ status = [roiActiv.cb(:).Value];
 [roiData.y0(status).Enable] = deal('on');
 [roiData.width(status).Enable] = deal('on');
 [roiData.height(status).Enable] = deal('on');
+[roiData.select(status).Enable] = deal('on');
 
 if any(status)                                                              % motion analysis is only possible, if at least one roi is activ                                                           
   start.Enable = 'on';
@@ -655,7 +771,9 @@ end
 function UpdateVidObject(vid, roiData, roiActiv, image)                     % update and display image
 
 image = AddRoi2Image(image, roiData, roiActiv);
+warning('off', 'Images:initSize:adjustingMag');
 imshow(image, 'Parent', vid);
+warning('on', 'Images:initSize:adjustingMag');
 drawnow;
 
 end
