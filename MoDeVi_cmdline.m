@@ -16,6 +16,8 @@ function MoDeVi_cmdline( cfg )
 %   cfg.selROI3     = true or false, (default: true)
 %   cfg.selROI4     = true or false, (default: true)
 %   cfg.selbaseROI  = true or false, (default: true)
+%   cfg.showpreview = show first frame of video including ROIs for verification of the configuration
+%                     true or false, (default: true)
 %
 % NOTE: The regions of interest have to be within the image. Therefore it
 % is recommended to check the validity of the regions with MoDeVi_gui 
@@ -46,6 +48,7 @@ selROI2       = MoDeVi_getopt(cfg, 'selROI2', true);
 selROI3       = MoDeVi_getopt(cfg, 'selROI3', true);
 selROI4       = MoDeVi_getopt(cfg, 'selROI4', true);
 selbaseROI    = MoDeVi_getopt(cfg, 'selbaseROI', true);
+showpreview   = MoDeVi_getopt(cfg, 'showpreview', true);
 
 roi.dimension = {ROI1, ROI2, ROI3, ROI4, baseROI};
 roi.selected = [selROI1 selROI2 selROI3 selROI4 selbaseROI];
@@ -142,25 +145,27 @@ if selbaseROI                                                               % ba
 end
 
 % Visual Check of settings
-NewImg = readFrame(VidObj);
-NewImg = GeneratePreview(roi, NewImg);                                      % Add regions of interest to first image of the video
+if showpreview
+  NewImg = readFrame(VidObj);
+  NewImg = GeneratePreview(roi, NewImg);                                    % Add regions of interest to first image of the video
 
-warning off;
-imshow(NewImg);
-warning on;
+  warning off;
+  imshow(NewImg);
+  warning on;
 
-selection = false;
-while selection == false
-  fprintf('\nDo you want to analyse the video by using the shown regions of interest?\n')
-  x = input('Select [y/n]: ','s');
-  if strcmp('y', x)
-    selection = true;
-    close(gcf);
-  elseif strcmp('n', x)
-    close(gcf);
-    return;
-  else
-    selection = false;
+  selection = false;
+  while selection == false
+    fprintf('\nDo you want to analyse the video by using the shown regions of interest?\n')
+    x = input('Select [y/n]: ','s');
+    if strcmp('y', x)
+      selection = true;
+      close(gcf);
+    elseif strcmp('n', x)
+      close(gcf);
+      return;
+    else
+      selection = false;
+    end
   end
 end
 
