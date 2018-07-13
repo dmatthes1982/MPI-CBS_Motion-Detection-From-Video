@@ -749,7 +749,7 @@ cfg.selbaseROI = roiActiv.cb(5).Value;
 
 cfg.showpreview = false;
 
-MoDeVi_cmdline(cfg);
+MoDeVi_noView(cfg);
 
 start.Enable = 'on';                                                        % enable start, save, export, noVis and load button
 save.Enable = saveButtonStatus;

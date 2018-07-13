@@ -1,5 +1,10 @@
-function MoDeVi_cmdline( cfg )
-% MODEVI_CMDLINE 
+function MoDeVi_noView( cfg )
+% MODEVI_NOVIEW estimates like MODEVI_GUI motion signals by analysing the
+% changes in regions of interests of successive pictures of a video stream.
+% Compared to MODEVI_GUI, this function has almost no graphical user
+% interface. It doesn't show either the video or the motion signals during
+% data processing. As a result this function is around six times faster
+% with data processing.
 %
 % Use as
 %   MoDeVi_cmdline( cfg )
@@ -144,7 +149,7 @@ if selbaseROI                                                               % ba
   end
 end
 
-% Visual Check of settings
+% Visual check of settings
 if showpreview
   NewImg = readFrame(VidObj);
   NewImg = GeneratePreview(roi, NewImg);                                    % Add regions of interest to first image of the video
@@ -155,8 +160,7 @@ if showpreview
 
   selection = false;
   while selection == false
-    fprintf('\nDo you want to analyse the video by using the shown regions of interest?\n')
-    x = input('Select [y/n]: ','s');
+    x = inputdlg('Do you want to use the shown ROIs? Select [y/n]: ');
     if strcmp('y', x)
       selection = true;
       close(gcf);
