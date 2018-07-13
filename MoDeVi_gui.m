@@ -836,7 +836,8 @@ address.Enable = 'off';                                                     % di
 [roiData.select(:).Enable] = deal('off');
 [roiActiv.cb(:).Enable] = deal('off');
 
-h = figure;
+h = figure('Name','Select Region of interest','NumberTitle','off');
+h.MenuBar = 'none';
 warning('off', 'Images:initSize:adjustingMag');
 imshow(load.UserData.Image);
 warning('on', 'Images:initSize:adjustingMag');
