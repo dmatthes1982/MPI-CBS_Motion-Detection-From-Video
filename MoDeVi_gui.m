@@ -60,6 +60,11 @@ roiLabel.description(2).Text = 'Region of interest 2:';
 roiLabel.description(3).Text = 'Region of interest 3:';
 roiLabel.description(4).Text = 'Region of interest 4:';
 roiLabel.description(5).Text = 'Baseline :';
+roiLabel.description(1).FontColor = [0 0.9 0];
+roiLabel.description(2).FontColor = [1 0.5 0];
+roiLabel.description(3).FontColor = [0 0 1];
+roiLabel.description(4).FontColor = [1 0 1];
+roiLabel.description(5).FontColor = [1 0 0];
 
 roiLabel.x0(1) = uilabel(fig);                                              % text label for x zero point                                             
 roiLabel.x0(2) = uilabel(fig);
@@ -402,7 +407,7 @@ while(1)
     DiffImage = NewImage - OldImage;
     imshow(AddRoi2Image(DiffImage, roiData, roiActiv), 'Parent', vid);      % display diffence of current grayscale image and its predecessor
     
-    sigColour = {'green', 'yellow', 'blue', 'magenta', 'red'};
+    sigColour = {[0 0.9 0], [1 0.5 0], 'blue', 'magenta', 'red'};
     for i=1:1:length(motionSignal)                                          % update motion signal time course for all selected regions of interest
       if status(i) == true
         plot(sig, motionSignal{i}((numOfFrames - 1):1: ...
@@ -873,7 +878,7 @@ end
 % -------------------------------------------------------------------------
 function [image] = AddRoi2Image(image, roiData, roiActiv)                   % add regions of interest in different colours (for rgb images)
                                                                             % or white (for grayscale images) colour to image
-roiColorDef = [0, 255, 0; 255, 255, 0; 0, 0, 255; 255, 0, 255; 255, 0, 0];  % frame colour specification
+roiColorDef = [0, 230, 0; 255, 180, 0; 0, 0, 255; 255, 0, 255; 255, 0, 0];  % frame colour specification
 status = [roiActiv.cb(:).Value]; 
 
 for i = 1:1:5
