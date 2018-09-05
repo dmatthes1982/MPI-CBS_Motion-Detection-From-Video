@@ -18,7 +18,7 @@
 % -------------------------------------------------------------------------
 
 fig = uifigure;                                                             % figure
-fig.Position = [100 220 1060 600];
+fig.Position = [100 100 1060 600];
 fig.Name = 'Motion Detection from Videos';
 fig.CloseRequestFcn = @(fig, event)CloseRequestFunction(fig);               % connect callback func CloseRequestFunction with figure
 
