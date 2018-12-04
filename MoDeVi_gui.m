@@ -28,8 +28,22 @@ vid.YTick = [];
 vid.Position = [20 290 500 290];
 vid.Visible = 'off';
 
-slid = uislider(fig);
-slid.Position = [20 290 490 3];
+play = uibutton(fig);                                                       % button for simple video playback without analysis
+play.Position = [20 290 24 24];
+play.Text = char(9654);
+play.Visible = 'off';
+play.Enable = 'off';
+play.UserData = 'stop';
+
+timewin = uieditfield(fig, 'numeric', 'ValueDisplayFormat', '%.3f');        % time window for the navigation to a specific time point in the recording
+timewin.Position = [50 290 70 24];
+timewin.Value = 0.000;
+timewin.Limits = [0.000 9999.999];
+timewin.Visible = 'off';
+timewin.Enable = 'off';
+
+slid = uislider(fig);                                                       % slider for scrolling through the recording
+slid.Position = [130 300 380 3];
 slid.MajorTicks = [];
 slid.MinorTicks = [];
 slid.Visible = 'off';
@@ -38,7 +52,6 @@ slid.Enable = 'off';
 sig = uiaxes(fig);                                                          % graph, wich shows the motion signal cource during 
 sig.Position = [540 290 500 290];                                           % the video processing
 sig.XLim = [0 75];
-%sig.YLim = [0 2*10^-4];
 
 label = uilabel(fig);                                                       % text label, which displays the current frame number and
 label.Position = [20 260 980 20];                                           % and the current motion value during video processing
@@ -153,7 +166,7 @@ roiData.width(2).Position = [420 180 60 30];
 roiData.width(3).Position = [420 140 60 30];
 roiData.width(4).Position = [420 100 60 30];
 roiData.width(5).Position = [420 60 60 30];
-[roiData.width(:).Value] = deal(1000);
+[roiData.width(:).Value]  = deal(1000);
 [roiData.width(:).Limits] = deal([1 1000]);
 [roiData.width(:).Enable] = deal('off');
 
@@ -167,7 +180,7 @@ roiData.height(2).Position = [540 180 60 30];
 roiData.height(3).Position = [540 140 60 30];
 roiData.height(4).Position = [540 100 60 30];
 roiData.height(5).Position = [540 60 60 30];
-[roiData.height(:).Value] = deal(1000);
+[roiData.height(:).Value]  = deal(1000);
 [roiData.height(:).Limits] = deal([1 1000]);
 [roiData.height(:).Enable] = deal('off');
 
@@ -209,7 +222,7 @@ roiActiv.cb(1).Text = 'Activate ROI 1';
 roiActiv.cb(2).Text = 'Activate ROI 2';
 roiActiv.cb(3).Text = 'Activate ROI 3';
 roiActiv.cb(4).Text = 'Activate ROI 4';
-roiActiv.cb(3).Text = 'Activate base ROI';
+roiActiv.cb(5).Text = 'Activate base ROI';
 [roiActiv.cb(:).Enable] = deal('off');
 [roiActiv.cb(:).Value] = deal(1);
 
@@ -258,23 +271,25 @@ roi.description(1:5)  = {'first', 'second', 'third', 'fourth', 'base'};
 % Link callback functions -------------------------------------------------
 start.ButtonPushedFcn = @(start, evt)StartButtonPushed(fig, start, stop,... % connect callback func StartButtonPushed with corresponding button
                                     save, export, noVis, address, load, ...
-                                    roiData, roiActiv, slid);
+                                    roiData, roiActiv, slid, play, ...
+                                    timewin);
 stop.ButtonPushedFcn = @(stop, evt)StopButtonPushed(vid, start, stop, ...   % connect callback func StopButtonPushed with corresponding button
                                     save, export, noVis, address, load, ...
-                                    roiData, roiActiv, slid);
+                                    roiData, roiActiv, slid, play, ...
+                                    timewin);
 save.ButtonPushedFcn = @(save, evt)SaveButtonPushed(time, motionSignal, ... % connect callback func SaveButtonPushed with corresponding button
                                     roi, address); 
-load.ButtonPushedFcn = @(load, evt)LoadButtonPushed(vid, slid, start, ...   % connect callback func LoadButtonPushed with corresponding button
-                                    export, noVis, roiData, roiActiv, ...
-                                    address, load);
+load.ButtonPushedFcn = @(load, evt)LoadButtonPushed(vid, slid, play, ...    % connect callback func LoadButtonPushed with corresponding button
+                                    timewin, start, export, noVis, ...
+                                    roiData, roiActiv, address, load);
 export.ButtonPushedFcn = @(export, evt)ExportButtonPushed(roiData, ...      % connect callback func ExportButtonPushed with corresponding button
                                     roiActiv, address);
 noVis.ButtonPushedFcn = @(noVis, evt)NoVisButtonPushed(start, save, ...     % connect callback func NoVisButtonPushed with corresponding button
-                                    export, noVis, load, slid, address, ...
-                                    roiData, roiActiv);
+                                    export, noVis, load, slid, play, ...
+                                    timewin, address, roiData, roiActiv);
 address.ValueChangedFcn = @(address, evt)AddressFieldChanged(vid, slid, ... % connect callback func AddressFieldChanged with corresponding field
-                                    start, export, noVis, roiData, ...
-                                    roiActiv, address, load);
+                                    play, timewin, start, export, noVis,...
+                                    roiData, roiActiv, address, load);
 
 roiData.x0(1).ValueChangedFcn = @(x0, evt)X0FieldChanged(vid, roiData, ...  % connect callback func X0FieldChanged with corresponding field of ROI 1 selection
                                     roiActiv, load, roiData.index(1));
@@ -332,24 +347,24 @@ roiData.height(5).ValueChangedFcn = @(height, evt)HeightFieldChanged(...    % co
 
 roiData.select(1).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 1 selection
                                     vid, start, save, export, noVis, ...
-                                    load, slid, address, roiData, ...
-                                    roiActiv, roiData.index(1));
+                                    load, slid, play, timewin, address, ...
+                                    roiData, roiActiv, roiData.index(1));
 roiData.select(2).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 2 selection
                                     vid, start, save, export, noVis, ...
-                                    load, slid, address, roiData, ...
-                                    roiActiv, roiData.index(2));
+                                    load, slid, play, timewin, address, ...
+                                    roiData, roiActiv, roiData.index(2));
 roiData.select(3).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 3 selection
                                     vid, start, save, export, noVis, ...
-                                    load, slid, address, roiData, ...
-                                    roiActiv, roiData.index(3));
+                                    load, slid, play, timewin, address, ...
+                                    roiData, roiActiv, roiData.index(3));
 roiData.select(4).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 4 selection
                                     vid, start, save, export, noVis, ...
-                                    load, slid, address, roiData, ...
-                                    roiActiv, roiData.index(4));
+                                    load, slid, play, timewin, address, ...
+                                    roiData, roiActiv, roiData.index(4));
 roiData.select(5).ButtonPushedFcn = @(select, evt)SelectButtonPushed( ...   % connect callback func SelectButtonPushed with corresponding button of ROI 5 selection
                                     vid, start, save, export, noVis, ...
-                                    load, slid, address, roiData, ...
-                                    roiActiv, roiData.index(5));
+                                    load, slid, play, timewin, address, ...
+                                    roiData, roiActiv, roiData.index(5));
 
 roiActiv.cb(1).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % connect callback func CheckBoxSwitched with corresponding checkbox of ROI 1 selection
                                     start, roiData, roiActiv);
@@ -362,8 +377,16 @@ roiActiv.cb(4).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % co
 roiActiv.cb(5).ValueChangedFcn = @(cb, evt)CheckBoxSwitched(vid, load, ...  % connect callback func CheckBoxSwitched with corresponding checkbox of ROI 5 selection
                                     start, roiData, roiActiv);
 
-slid.ValueChangedFcn = @(slid, evt)SliderMoved(slid, vid, load, ...         % connect callback func SliderMoved with corresponding slider
+slid.ValueChangedFcn = @(slid, evt)SliderMoved(slid, timewin, vid, load,... % connect callback func SliderMoved with corresponding slider
                                     roiData, roiActiv);
+
+timewin.ValueChangedFcn = @(timewin, evt)TimewinChanged(timewin, slid, ...  % connect callback func SliderMoved with corresponding field
+                                    vid, load, roiData, roiActiv);
+
+play.ButtonPushedFcn = @(play, evt)PlayButtonPushed(fig, start, stop,...    % connect callback func PlayButtonPushed with corresponding button
+                                    save, export, noVis, address, load, ...
+                                    roiData, roiActiv, slid, play, ...
+                                    timewin);
 
 % -------------------------------------------------------------------------
 % Main video processing loop
@@ -375,97 +398,125 @@ while(1)
     clear;
     return;
   end
-  
-  VidObj = VideoReader(address.Value);                                      %#ok<TNMLP>, create video file handle  
-  numOfFrames = ceil(VidObj.FrameRate * VidObj.Duration);                   % estimate approximate number of frames
+  % -----------------------------------------------------------------------
+  % Video analysis
+  % -----------------------------------------------------------------------
+  if strcmp(stop.Enable, 'on')                                              % a active stop button indicates that video analysis was selected
+    VidObj = VideoReader(address.Value);                                    %#ok<TNMLP>, create video file handle
+    numOfFrames = ceil(VidObj.FrameRate * VidObj.Duration);                 % estimate approximate number of frames
 
-  dispBufLength     = 75;                                                   % determine length of display buffer for visualization
-  motionSignal(1:5) = {zeros(1, numOfFrames + dispBufLength)};              % allocate memory for the motion signal
-  time              = zeros(1, numOfFrames);                                % allocate memory for the time vector
+    dispBufLength     = 75;                                                 % determine length of display buffer for visualization
+    motionSignal(1:5) = {zeros(1, numOfFrames + dispBufLength)};            % allocate memory for the motion signal
+    time              = zeros(1, numOfFrames);                              % allocate memory for the time vector
 
-  if hasFrame(VidObj)                                                   
-    OldImg      = readFrame(VidObj);                                        % load first image
-    load.UserData.Image = OldImg;                                           % update image preview buffer, since slider was reset when start was pressed
-    numOfFrames = 1;
-  end
+    if hasFrame(VidObj)
+      OldImg      = readFrame(VidObj);                                      % load first image
+      load.UserData.Image = OldImg;                                         % update image preview buffer, since slider was reset when start was pressed
+      numOfFrames = 1;
+    end
 
-  while hasFrame(VidObj) && strcmp(stop.Enable, 'on')                       % do as long as frames available or until stop was pushed
-    NewImg      = readFrame(VidObj);                                        % get new frame
-    numOfFrames = numOfFrames + 1;                                          % increase number of frames Counter
-    sigPointer  = numOfFrames + dispBufLength - 1;                          % determine pointer to current field of the motion signal vector
-    timePointer = numOfFrames - 1;                                          % determine pointer to current field of the time vector
-    NewImage    = im2double(NewImg);                                        % convert pixel values into double format
-    OldImage    = im2double(OldImg);
-    NewImage    = rgb2gray(NewImage);                                       % convert images into a grayscale images
-    OldImage    = rgb2gray(OldImage);
-    
-    status = [roiActiv.cb(:).Value];                                        % check which regions of interest are selected
-    
-    for i=1:1:length(motionSignal)                                          % do it for all selected regions of interest
-      if status(i) == true
-        NewROI      = GetExcerpt(NewImage, roiData, i);                     % extract the part of the image, wich is defined as region of interest
-        OldROI      = GetExcerpt(OldImage, roiData, i);    
-      
-        motionSignal{i}(sigPointer) = mean(mean((OldROI - NewROI).^2));     % estimate current value
+    while hasFrame(VidObj) && strcmp(stop.Enable, 'on')                     % do as long as frames available or until stop was pushed
+      NewImg      = readFrame(VidObj);                                      % get new frame
+      numOfFrames = numOfFrames + 1;                                        % increase number of frames Counter
+      sigPointer  = numOfFrames + dispBufLength - 1;                        % determine pointer to current field of the motion signal vector
+      timePointer = numOfFrames - 1;                                        % determine pointer to current field of the time vector
+      NewImage    = im2double(NewImg);                                      % convert pixel values into double format
+      OldImage    = im2double(OldImg);
+      NewImage    = rgb2gray(NewImage);                                     % convert images into a grayscale images
+      OldImage    = rgb2gray(OldImage);
+
+      status = [roiActiv.cb(:).Value];                                      % check which regions of interest are selected
+
+      for i=1:1:length(motionSignal)                                        % do it for all selected regions of interest
+        if status(i) == true
+          NewROI      = GetExcerpt(NewImage, roiData, i);                   % extract the part of the image, wich is defined as region of interest
+          OldROI      = GetExcerpt(OldImage, roiData, i);
+
+          motionSignal{i}(sigPointer) = mean(mean((OldROI - NewROI).^2));   % estimate current value
+        end
+      end
+      time(timePointer) = VidObj.CurrentTime;                               % add current timestamp to time vector
+
+      warning off;
+      DiffImage = NewImage - OldImage;
+      imshow(AddRoi2Image(DiffImage, roiData, roiActiv), 'Parent', vid);    % display diffence of current grayscale image and its predecessor
+
+      sigColour = {[0 0.9 0], [1 0.5 0], 'blue', 'magenta', 'red'};
+      for i=1:1:length(motionSignal)                                        % update motion signal time course for all selected regions of interest
+        if status(i) == true
+          plot(sig, motionSignal{i}((numOfFrames - 1):1: ...
+                (numOfFrames + 75 - 1)), 'Color', sigColour{i});
+          hold(sig, 'on')
+        end
+      end
+      drawnow;                                                              % IMPORTANT: command updates figures and process callbacks
+      hold(sig, 'off');
+      warning on;
+
+      msg = sprintf('Status: Frame: %d ', numOfFrames);                     % update text label
+      for i = 1:1:length(motionSignal)
+        if status(i) == true
+          msg = [msg sprintf('    %s ROI Val.: %d ', roi.description{i},...
+                         motionSignal{i}(numOfFrames + 75 - 1))];           %#ok<AGROW>
+        end
+      end
+      label.Text = msg;
+
+      OldImg = NewImg;                                                      % copy current Image to variable containing the predecessor
+    end
+
+    % After either the whole video processing was done or stop button pushed
+    time = time(1:timePointer);                                             % shrink time vector to its actual length
+    for i=1:1:length(motionSignal)
+      motionSignal{i} = motionSignal{i}(dispBufLength+1:sigPointer);        % shrink motion signal vector to its actual length
+    end
+    roi.selected(:) = [roiActiv.cb(:).Value];
+
+    for i=1:1:length(motionSignal)
+      if roi.selected(i) == true
+        roi.dimension{i} = [roiData.x0(i).Value roiData.y0(i).Value ...     % get current selection of roi
+                           roiData.width(i).Value roiData.height(i).Value];
+      else
+        roi.dimension{i} = [0 0 0 0];
       end
     end
-    time(timePointer) = VidObj.CurrentTime;                                 % add current timestamp to time vector
-
-    warning off;
-    DiffImage = NewImage - OldImage;
-    imshow(AddRoi2Image(DiffImage, roiData, roiActiv), 'Parent', vid);      % display diffence of current grayscale image and its predecessor
     
-    sigColour = {[0 0.9 0], [1 0.5 0], 'blue', 'magenta', 'red'};
-    for i=1:1:length(motionSignal)                                          % update motion signal time course for all selected regions of interest
-      if status(i) == true
-        plot(sig, motionSignal{i}((numOfFrames - 1):1: ...
-              (numOfFrames + 75 - 1)), 'Color', sigColour{i}); 
-        hold(sig, 'on')
-      end
+    save.ButtonPushedFcn = @(save, evt)SaveButtonPushed(time, ...           % update callback for the save SaveButtonPushed event
+                                      motionSignal, roi, address);
+    StopButtonPushed(vid, start, stop, save, export, noVis, address, ...
+                     load, roiData, roiActiv, slid, play, timewin);
+  % -----------------------------------------------------------------------
+  % Video playback
+  % -----------------------------------------------------------------------
+  elseif strcmp(play.UserData, 'play')                                      % if field UserData of the play button contains the string 'play', playback was selected
+    VidObj = VideoReader(address.Value);                                    %#ok<TNMLP>, create video file handle
+    VidObj.CurrentTime = timewin.Value;
+    slid.Limits = [0 (VidObj.duration*1000)];
+    timewin.Limits = [0 (VidObj.duration)];
+    while hasFrame(VidObj) && strcmp(play.UserData, 'play')                 % run the video until user interrupt or the end of the video file
+      load.UserData.Image = readFrame(VidObj);                              % load video image which corresponds to time window value and keep it
+      UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);         % add regions of interest to the updated image and show image
+      slid.Value = VidObj.CurrentTime * 1000;
+      timewin.Value = VidObj.CurrentTime;
     end
-    drawnow;                                                                % IMPORTANT: command updates figures and process callbacks
-    hold(sig, 'off');
-    warning on;
-    
-    msg = sprintf('Status: Frame: %d ', numOfFrames);                       % update text label
-    for i = 1:1:length(motionSignal)
-      if status(i) == true
-        msg = [msg sprintf('    %s ROI Val.: %d ', roi.description{i}, ...
-                       motionSignal{i}(numOfFrames + 75 - 1))];             %#ok<AGROW>
-      end
-    end
-    label.Text = msg;
-    
-    OldImg = NewImg;                                                        % copy current Image to variable containing the predecessor
-  end
-  
-  % After either the whole video processing was done or stop button pushed
-  time = time(1:timePointer);                                               % shrink time vector to its actual length                               
-  for i=1:1:length(motionSignal)
-    motionSignal{i} = motionSignal{i}(dispBufLength+1:sigPointer);          % shrink motion signal vector to its actual length
-  end
-  roi.selected(:) = [roiActiv.cb(:).Value];
-  
-  for i=1:1:length(motionSignal)
-    if roi.selected(i) == true
-      roi.dimension{i} = [roiData.x0(i).Value roiData.y0(i).Value ...       % get current selection of roi
-                          roiData.width(i).Value roiData.height(i).Value];
-    else
-      roi.dimension{i} = [0 0 0 0];
+    slid.Limits = [0 (VidObj.duration*1000 - 2)];
+    timewin.Limits = [0 (VidObj.duration - 0.002)];
+    if strcmp(play.UserData, 'play')                                        % if streaming was not user interrupted
+      PlayButtonPushed(fig, start, stop, save, export, noVis, address, ...  % stop streaming
+                     load, roiData, roiActiv, slid, play, timewin);
     end
   end
-  
-  save.ButtonPushedFcn = @(save, evt)SaveButtonPushed(time, ...             % update callback for the save SaveButtonPushed event
-                                    motionSignal, roi, address);
 end
 
 % -------------------------------------------------------------------------
 % Callback functions
 % -------------------------------------------------------------------------
-function LoadButtonPushed(vid, slid, start, export, noVis, roiData, ...     % LoadButtonPushed callback
-                            roiActiv, address, load)
+function LoadButtonPushed(vid, slid, play, timewin, start, export, ...      % LoadButtonPushed callback
+                            noVis, roiData, roiActiv, address, load)
 
-[file, path] = uigetfile('*.wmv', 'Select video file...');                  % get filename
+persistent path;
+
+[file, path] = uigetfile([path '*.wmv'], 'Select video file...');           % get filename
 
 if ~any(file)                                                               % if cancel was pressed
   [roiData.x0(:).Enable] = deal('off');                                     % disable roi selection
@@ -479,6 +530,10 @@ if ~any(file)                                                               % if
   noVis.Enable = 'off';                                                     % disable noVis button
   slid.Visible = 'off';                                                     % hide video slider
   slid.Enable = 'off';                                                      % disable video slider
+  play.Visible = 'off';                                                     % hide play button
+  play.Enable = 'off';                                                      % disable play button
+  timewin.Visible = 'off';                                                  % hide time window
+  timewin.Enable = 'off';                                                   % disable time window
   address.Value = '';                                                       % clear address field
   
   imshow([], 'Parent', vid);                                                % clear previous preview
@@ -500,6 +555,10 @@ catch                                                                       % if
   noVis.Enable = 'off';                                                     % disable noVis button
   slid.Visible = 'off';                                                     % hide video slider
   slid.Enable = 'off';                                                      % disable video slider
+  play.Visible = 'off';                                                     % hide play button
+  play.Enable = 'off';                                                      % disable play button
+  timewin.Visible = 'off';                                                  % hide time window
+  timewin.Enable = 'off';                                                   % disable time window
   address.Value = '';                                                       % clear address field
   
   imshow([], 'Parent', vid);                                                % clear previous preview
@@ -537,7 +596,7 @@ NewImg = readFrame(VidObj);                                                 % lo
 [roiData.width(1:4).Value] = deal(VidObj.Width);
 [roiData.height(1:4).Value] = deal(VidObj.Height);
 
-[roiData.x0(5).Value] = deal(VidObj.Width - 200);                           % define the initial base region at top right of the image
+[roiData.x0(5).Value] = deal(1);                                            % define the initial base region at top left of the image
 [roiData.y0(5).Value] = deal(1);
 [roiData.width(5).Value] = deal(200);
 [roiData.height(5).Value] = deal(200);
@@ -551,13 +610,19 @@ slid.Visible = 'on';                                                        % sh
 slid.Enable = 'on';                                                         % enable video slider
 slid.Limits = [0 (VidObj.duration*1000-2)];                                 % adapt slider limits to video duration
 slid.Value = 0;                                                             % reset slider setting
+play.Visible = 'on';                                                        % show play button
+play.Enable = 'on';                                                         % enable play button
+timewin.Visible = 'on';                                                     % show time window
+timewin.Enable = 'on';                                                      % enable time window
+timewin.Limits = [0 (VidObj.duration-0.002)];                               % adapt time window limits to video duration
+timewin.Value = 0;                                                          % reset time window setting
 
 UpdateVidObject(vid, roiData, roiActiv, NewImg);                            % add regions of interest to the image and show image
 
 end
 
-function AddressFieldChanged(vid, slid, start, export, noVis, roiData, ...  % AddressFieldChanged callback
-                              roiActiv, address, load)
+function AddressFieldChanged(vid, slid, play, timewin, start, export, ...   % AddressFieldChanged callback
+                              noVis, roiData, roiActiv, address, load)
 
 try                                                                         % validity check
   VidObj = VideoReader(address.Value);                                      % try to get video handle
@@ -573,6 +638,10 @@ catch                                                                       % if
   noVis.Enable = 'off';                                                     % disable noVis button
   slid.Visible = 'off';                                                     % hide video slider
   slid.Enable = 'off';                                                      % disable video slider
+  play.Visible = 'off';                                                     % hide play button
+  play.Enable = 'off';                                                      % disable play button
+  timewin.Visible = 'off';                                                  % hide time window
+  timewin.Enable = 'off';                                                   % disable time window
 
   imshow([], 'Parent', vid);                                                % clear previous preview
   
@@ -608,7 +677,7 @@ NewImg = readFrame(VidObj);                                                 % lo
 [roiData.width(1:4).Value] = deal(VidObj.Width);
 [roiData.height(1:4).Value] = deal(VidObj.Height);
 
-[roiData.x0(5).Value] = deal(VidObj.Width - 200);                           % define the initial base region at top right of the image
+[roiData.x0(5).Value] = deal(1);                                            % define the initial base region at top left of the image
 [roiData.y0(5).Value] = deal(1);
 [roiData.width(5).Value] = deal(200);
 [roiData.height(5).Value] = deal(200);
@@ -622,12 +691,20 @@ slid.Visible = 'on';                                                        % sh
 slid.Enable = 'on';                                                         % enable video slider
 slid.Limits = [0 (VidObj.duration*1000-2)];                                 % adapt slider limits to video duration
 slid.Value = 0;                                                             % reset slider setting
+play.Visible = 'on';                                                        % show play button
+play.Enable = 'on';                                                         % enable play button
+timewin.Visible = 'on';                                                     % show time window
+timewin.Enable = 'on';                                                      % enable time window
+timewin.Limits = [0 (VidObj.duration-0.002)];                               % adapt time window limits to video duration
+timewin.Value = 0;                                                          % reset time window setting
+
 UpdateVidObject(vid, roiData, roiActiv, NewImg);                            % add regions of interest to the image and show image
 
 end
 
 function StartButtonPushed(fig, start, stop, save, export, noVis, ...       % StartButtonPushed callback
-                           address, load, roiData, roiActiv, slid)
+                           address, load, roiData, roiActiv, slid, play,...
+                           timewin)
 
 start.Enable = 'off';                                                       % disable start, save, export, noVis and load button
 save.Enable = 'off';
@@ -636,6 +713,10 @@ noVis.Enable = 'off';
 load.Enable = 'off';
 slid.Enable = 'off';                                                        % disable video slider
 slid.Value = 0;                                                             % reset slider position
+play.Enable = 'off';                                                        % disable play button
+timewin.Enable = 'off';                                                     % disable time window
+timewin.Value = 0;                                                          % reset time window value
+
 stop.Enable = 'on';                                                         % enable stop button
 address.Enable = 'off';                                                     % disable address field
 [roiData.x0(:).Enable] = deal('off');                                       % disable roi selection
@@ -649,7 +730,8 @@ uiresume(fig);                                                              % ac
 end
 
 function StopButtonPushed(vid, start, stop, save, export, noVis, ...        % StopButtonPushed callback
-                          address, load, roiData, roiActiv, slid)
+                          address, load, roiData, roiActiv, slid, play,...
+                          timewin)
 
 start.Enable = 'on';                                                        % enable start, save, export, noVis and load button
 save.Enable = 'on';
@@ -657,6 +739,8 @@ export.Enable = 'on';
 noVis.Enable = 'on';
 load.Enable = 'on';
 slid.Enable = 'on';                                                         % enable video slider
+play.Enable = 'on';                                                         % enable play button
+timewin.Enable = 'on';                                                      % enable time window
 stop.Enable = 'off';                                                        % disable stop button
 address.Enable = 'on';                                                      % enable address field
 status = [roiActiv.cb(:).Value];
@@ -710,7 +794,7 @@ uisave({'cfg'}, address);
 end
 
 function NoVisButtonPushed(start, save, export, noVis, load, slid, ...      % NoVisButtonPushed callback
-                           address, roiData, roiActiv)
+                           play, timewin, address, roiData, roiActiv)
 
 start.Enable = 'off';                                                       % disable start, save, export, noVis and load button
 saveButtonStatus = save.Enable;
@@ -719,6 +803,9 @@ export.Enable ='off';
 noVis.Enable = 'off';
 load.Enable = 'off';
 slid.Enable = 'off';                                                        % disable video slider
+play.Enable = 'off';                                                        % disable play button
+timewin.Enable = 'off';                                                     % disable time window
+
 address.Enable = 'off';                                                     % disable address field
 [roiData.x0(:).Enable] = deal('off');                                       % disable roi selection
 [roiData.y0(:).Enable] = deal('off');
@@ -757,6 +844,8 @@ export.Enable = 'on';
 noVis.Enable = 'on';
 load.Enable = 'on';
 slid.Enable = 'on';                                                         % enable video slider
+play.Enable = 'on';                                                         % enable play button
+timewin.Enable = 'on';                                                      % enable time window
 address.Enable = 'on';                                                      % enable address field
 [roiData.x0(:).Enable] = deal('on');                                        % enable roi selection
 [roiData.y0(:).Enable] = deal('on');
@@ -818,7 +907,8 @@ UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);               % ad
 end
 
 function SelectButtonPushed(vid, start, save, export, noVis, load, ...      % SelectButtonPushed callback
-                            slid, address, roiData, roiActiv, index)
+                            slid, play, timewin, address, roiData, ...
+                            roiActiv, index)
 
 falseSelection = false;
 start.Enable = 'off';                                                       % disable start, save, export, noVis and load button
@@ -828,6 +918,8 @@ export.Enable ='off';
 noVis.Enable = 'off';
 load.Enable = 'off';
 slid.Enable = 'off';                                                        % disable video slider
+play.Enable = 'off';                                                        % disable play button
+timewin.Enable = 'off';                                                     % disable time window
 address.Enable = 'off';                                                     % disable address field
 [roiData.x0(:).Enable] = deal('off');                                       % disable roi selection
 [roiData.y0(:).Enable] = deal('off');
@@ -890,6 +982,8 @@ export.Enable = 'on';
 noVis.Enable = 'on';
 load.Enable = 'on';
 slid.Enable = 'on';                                                         % enable video slider
+play.Enable = 'on';                                                         % enable play button
+timewin.Enable = 'on';                                                      % enable time window
 address.Enable = 'on';                                                      % enable address field
 [roiData.x0(:).Enable] = deal('on');                                        % enable roi selection
 [roiData.y0(:).Enable] = deal('on');
@@ -940,14 +1034,75 @@ UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);               % ad
 
 end
 
-function SliderMoved(slid, vid, load, roiData, roiActiv)
+function SliderMoved(slid, timewin, vid, load, roiData, roiActiv)
 
 VidObj = load.UserData.VidObj;                                              % get video object
-VidObj.CurrentTime = slid.Value/1000;                                       % synchronize slider position with current time in video object
+VidObj.CurrentTime = slid.Value/1000;                                       % adapt current time in video object to slider position
+
+timewin.Value = slid.Value/1000;                                            % synchronize value in time window
 
 load.UserData.Image = readFrame(VidObj);                                    % load video image which corresponds to slider position and keep it
 
 UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);               % add regions of interest to the updated image and show image
+
+end
+
+function TimewinChanged(timewin, slid, vid, load, roiData, roiActiv)
+
+VidObj = load.UserData.VidObj;                                              % get video object
+VidObj.CurrentTime = timewin.Value;                                         % adapt current time in video object to time window value
+
+slid.Value = timewin.Value * 1000;                                          % synchronize slider position
+
+load.UserData.Image = readFrame(VidObj);                                    % load video image which corresponds to time window value and keep it
+
+UpdateVidObject(vid, roiData, roiActiv, load.UserData.Image);               % add regions of interest to the updated image and show image
+
+end
+
+function PlayButtonPushed(fig, start, stop, save, export, noVis, ...        % PlayButtonPushed callback
+                           address, load, roiData, roiActiv, slid, play,...
+                           timewin)
+
+if strcmp(play.UserData, 'stop')
+  play.UserData = 'play';
+  play.Text = char(9632);
+  start.Enable = 'off';                                                     % disable start, save, export, noVis and load button
+  save.Enable = 'off';
+  export.Enable = 'off';
+  noVis.Enable = 'off';
+  load.Enable = 'off';
+  slid.Enable = 'off';                                                      % disable video slider
+  timewin.Enable = 'off';                                                   % disable time window
+  stop.Enable = 'off';                                                      % disable stop button
+  address.Enable = 'off';                                                   % disable address field
+  [roiData.x0(:).Enable] = deal('off');                                     % disable roi selection
+  [roiData.y0(:).Enable] = deal('off');
+  [roiData.width(:).Enable] = deal('off');
+  [roiData.height(:).Enable] = deal('off');
+  [roiData.select(:).Enable] = deal('off');
+  [roiActiv.cb(:).Enable] = deal('off');
+  uiresume(fig);                                                            % activate video in the main loop
+elseif strcmp(play.UserData, 'play')
+  play.UserData = 'stop';
+  play.Text = char(9654);
+  start.Enable = 'on';                                                      % enable start, save, export, noVis and load button
+  save.Enable = 'on';
+  export.Enable = 'on';
+  noVis.Enable = 'on';
+  load.Enable = 'on';
+  slid.Enable = 'on';                                                       % enable video slider
+  timewin.Enable = 'on';                                                    % enable time window
+  stop.Enable = 'off';                                                      % disable stop button
+  address.Enable = 'on';                                                    % enable address field
+  status = [roiActiv.cb(:).Value];
+  [roiData.x0(status).Enable] = deal('on');                                 % enable roi selection
+  [roiData.y0(status).Enable] = deal('on');
+  [roiData.width(status).Enable] = deal('on');
+  [roiData.height(status).Enable] = deal('on');
+  [roiData.select(status).Enable] = deal('on');
+  [roiActiv.cb(:).Enable] = deal('on');
+end
 
 end
 
