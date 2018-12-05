@@ -82,8 +82,8 @@ end
 trialinfo   = cell2mat(cellfun(@(x) sscanf(x,'S%d'), trigger(stimuli), ...  % create trialinfo from the set of stimulus triggers
               'UniformOutput', false)');                                    %#ok<*NASGU>
 sampleinfo = [ event(stimuli).sample ]';                                    % create sampleinfo
-duration = [ event(stimuli).duration ]';
-sampleinfo(:,2) = sampleinfo(:,1) + duration - 1;
+%duration = [ event(stimuli).duration ]';
+%sampleinfo(:,2) = sampleinfo(:,1) + duration - 1;
 
 % -------------------------------------------------------------------------
 % Calculate sample vector
@@ -94,8 +94,8 @@ sampleNum = round(time*fsample);                                            % co
 sampleNum = sampleNum + videoStart - 1;                                     % add video start offset
 
 % -------------------------------------------------------------------------
-% Interpolate the data to get for the motion Signal the same resolution
-% which also the eeg signal has.
+% Interpolate the data to have a similar resolution of motion signal and
+% eeg signal.
 % -------------------------------------------------------------------------
 fprintf('<strong>Interpolate motion signals...</strong>\n');
 
@@ -110,6 +110,18 @@ for i = 1:1:numOfSignals
   if ~isempty(motionSignal{i})
     motionSignalIntpl{i} = interp1(sampleNum, motionSignal{i}, ...          % interpolate motion signals
                                       sampleNumIntpl, 'spline');
+  end
+end
+
+% -------------------------------------------------------------------------
+% Expand the motion signal with NaNs for the time period in which the video
+% recording was not started yet.
+% -------------------------------------------------------------------------
+sampleNumIntpl = [1:begsample-1 sampleNumIntpl];
+
+for i = 1:1:numOfSignals
+  if ~isempty(motionSignal{i})
+    motionSignalIntpl{i} = [NaN(1, begsample-1) motionSignalIntpl{i}];
   end
 end
 
