@@ -1,2 +1,5 @@
 test_files
+JAI_exports
 *.m~
+*.mat
+*.xls
